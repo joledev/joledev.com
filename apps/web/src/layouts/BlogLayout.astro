@@ -1,8 +1,10 @@
 ---
 import '../styles/global.css';
 import '../styles/prose.css';
+import { ViewTransitions } from 'astro:transitions';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import ToastContainer from '../components/ui/ToastContainer.svelte';
 import TableOfContents from '../components/blog/TableOfContents.svelte';
 import CopyButton from '../components/blog/CopyButton.svelte';
 import { getLangFromUrl } from '../i18n/utils';
@@ -105,22 +107,26 @@ const jsonLd = {
       rel="stylesheet"
     />
 
+    <ViewTransitions />
+
     <script is:inline>
-      (function () {
+      function applyTheme() {
         const saved = localStorage.getItem('theme');
         if (saved) {
           document.documentElement.setAttribute('data-theme', saved);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.setAttribute('data-theme', 'dark');
         }
-      })();
+      }
+      applyTheme();
+      document.addEventListener('astro:after-swap', applyTheme);
     </script>
 
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="min-h-screen bg-bg-primary text-text-primary">
-    <Header />
-    <main class="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+    <Header transition:name="header" transition:animate="none" />
+    <main class="px-4 py-12 sm:px-6 sm:py-16 lg:px-8" transition:animate="fade">
       <div class="mx-auto max-w-6xl">
         <!-- Back link -->
         <a
@@ -134,7 +140,7 @@ const jsonLd = {
         <!-- Article header -->
         <header class="mx-auto mt-8 max-w-3xl">
           <div class="flex items-center gap-3 text-sm">
-            <span class="rounded-full bg-accent-subtle px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-accent-primary">
+            <span class="rounded-full bg-secondary-subtle px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-secondary-primary">
               {categoryLabels[category]?.[lang] ?? category}
             </span>
             <span class="text-text-muted">&middot;</span>
@@ -164,7 +170,7 @@ const jsonLd = {
             <!-- Tags -->
             <div class="mt-10 flex flex-wrap gap-2 border-t border-border pt-6">
               {tags.map((tag) => (
-                <span class="rounded-md bg-accent-subtle px-3 py-1 text-sm font-medium text-accent-primary">
+                <span class="rounded-md bg-secondary-subtle px-3 py-1 text-sm font-medium text-secondary-primary">
                   {tag}
                 </span>
               ))}
@@ -196,17 +202,41 @@ const jsonLd = {
         </div>
       </div>
     </main>
-    <Footer />
+    <Footer transition:name="footer" transition:animate="none" />
+    <ToastContainer client:idle />
 
-    <!-- Wrap code blocks for copy button -->
+    <!-- Wrap code blocks for copy button (re-runs on view transition navigation) -->
     <script>
-      document.querySelectorAll('.prose pre').forEach((pre) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'code-block-wrapper';
-        wrapper.style.position = 'relative';
-        pre.parentNode?.insertBefore(wrapper, pre);
-        wrapper.appendChild(pre);
-      });
+      function initCodeBlocks() {
+        document.querySelectorAll('.prose pre:not(.code-wrapped)').forEach((pre) => {
+          pre.classList.add('code-wrapped');
+          const wrapper = document.createElement('div');
+          wrapper.className = 'code-block-wrapper';
+          wrapper.style.position = 'relative';
+          pre.parentNode?.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+        });
+      }
+      initCodeBlocks();
+      document.addEventListener('astro:page-load', initCodeBlocks);
+    </script>
+
+    <!-- Mermaid diagram rendering (re-runs on view transition navigation) -->
+    <script is:inline>
+      function initMermaid() {
+        var els = document.querySelectorAll('.mermaid:not([data-processed])');
+        if (!els.length) return;
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var script = document.createElement('script');
+        script.type = 'module';
+        script.textContent =
+          'import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";' +
+          'mermaid.initialize({ startOnLoad: false, theme: "' + (isDark ? 'dark' : 'default') + '", fontFamily: "var(--font-sans)" });' +
+          'mermaid.run({ nodes: document.querySelectorAll(".mermaid:not([data-processed])") });';
+        document.body.appendChild(script);
+      }
+      initMermaid();
+      document.addEventListener('astro:page-load', initMermaid);
     </script>
   </body>
 </html>

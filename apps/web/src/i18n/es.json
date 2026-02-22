@@ -61,6 +61,47 @@
         ]
       },
       {
+        "company": "Coop. Leyes de Reforma",
+        "logo": "/logos/leyes-de-reforma.png",
+        "role": "Arquitecto SaaS",
+        "type": "Híbrido",
+        "period": "Nov 2023 — Presente",
+        "description": "Ecosistema digital completo con múltiples aplicaciones y bots, procesando +10,000 transacciones mensuales para la operación integral de la cooperativa.",
+        "products": ["Bot WhatsApp", "App Móvil Socios", "Nómina", "Sistema Admin", "Landing Page"],
+        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
+        "highlights": [
+          "Landing page institucional",
+          "Sistema administrativo completo de gestión de cooperativa",
+          "Calculadora de nómina basada en entradas y salidas de producto",
+          "Bot de WhatsApp para solicitudes de empleados (pedidos, estatus, historial)",
+          "App móvil para socios: entradas/salidas, costos de insumos, nómina estimada y oficial, noticias y logros",
+          "Automatización de procesos operativos",
+          "Sistema de rastreo de errores con notificaciones por correo",
+          "Facturación automática CFDI"
+        ]
+      },
+      {
+        "company": "Coop. Progreso",
+        "logo": "/logos/progreso.png",
+        "role": "Arquitecto SaaS",
+        "type": "Híbrido",
+        "period": "Dic 2022 — Presente",
+        "description": "Digitalización integral de toda la operación de la cooperativa — el proyecto más grande en alcance, con app móvil en Play Store para +50 usuarios.",
+        "products": ["App Membresía", "CMS Dashboard", "Nextcloud", "Almacén", "Reportes", "Landing Page"],
+        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
+        "highlights": [
+          "Generación y automatización de remisiones",
+          "Procesamiento y rastreo de productos",
+          "Landing page con CMS — todo el contenido administrable desde un dashboard",
+          "Entornos de trabajo con Nextcloud (videollamadas, nube, chats)",
+          "Sistema de usuarios y permisos granulares",
+          "App de membresía digital en Play Store (próximamente App Store)",
+          "Control de almacén y automatización de entregas",
+          "Reportes en tiempo real",
+          "Rastreo de errores automático con notificaciones por correo"
+        ]
+      },
+      {
         "company": "AforeCoppel",
         "logo": "/logos/aforecoppel.png",
         "role": "Arquitecto de Software",
@@ -107,26 +148,6 @@
         ]
       },
       {
-        "company": "Coop. Leyes de Reforma",
-        "logo": "/logos/leyes-de-reforma.png",
-        "role": "Arquitecto SaaS",
-        "type": "Híbrido",
-        "period": "Nov 2023 — Presente",
-        "description": "Ecosistema digital completo con múltiples aplicaciones y bots, procesando +10,000 transacciones mensuales para la operación integral de la cooperativa.",
-        "products": ["Bot WhatsApp", "App Móvil Socios", "Nómina", "Sistema Admin", "Landing Page"],
-        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
-        "highlights": [
-          "Landing page institucional",
-          "Sistema administrativo completo de gestión de cooperativa",
-          "Calculadora de nómina basada en entradas y salidas de producto",
-          "Bot de WhatsApp para solicitudes de empleados (pedidos, estatus, historial)",
-          "App móvil para socios: entradas/salidas, costos de insumos, nómina estimada y oficial, noticias y logros",
-          "Automatización de procesos operativos",
-          "Sistema de rastreo de errores con notificaciones por correo",
-          "Facturación automática CFDI"
-        ]
-      },
-      {
         "company": "Coop. Emancipación",
         "logo": "/logos/emancipacion.png",
         "role": "Desarrollador Full Stack",
@@ -139,27 +160,6 @@
           "E-commerce minimalista con diseño enfocado en funcionalidad",
           "Portal de noticias con newsletters automatizadas (+2,000 suscriptores)",
           "Arquitectura diseñada para fácil mantenimiento y escalabilidad"
-        ]
-      },
-      {
-        "company": "Coop. Progreso",
-        "logo": "/logos/progreso.png",
-        "role": "Arquitecto SaaS",
-        "type": "Híbrido",
-        "period": "Dic 2022 — Presente",
-        "description": "Digitalización integral de toda la operación de la cooperativa — el proyecto más grande en alcance, con app móvil en Play Store para +50 usuarios.",
-        "products": ["App Membresía", "CMS Dashboard", "Nextcloud", "Almacén", "Reportes", "Landing Page"],
-        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
-        "highlights": [
-          "Generación y automatización de remisiones",
-          "Procesamiento y rastreo de productos",
-          "Landing page con CMS — todo el contenido administrable desde un dashboard",
-          "Entornos de trabajo con Nextcloud (videollamadas, nube, chats)",
-          "Sistema de usuarios y permisos granulares",
-          "App de membresía digital en Play Store (próximamente App Store)",
-          "Control de almacén y automatización de entregas",
-          "Reportes en tiempo real",
-          "Rastreo de errores automático con notificaciones por correo"
         ]
       },
       {

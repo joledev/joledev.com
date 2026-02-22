@@ -27,5 +27,5 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || '';
   <ProjectGrid />
   <RecentPosts />
   <CallToAction />
-  <QuoterModal client:load lang="en" apiUrl={apiUrl} />
+  <QuoterModal client:idle lang="en" apiUrl={apiUrl} />
 </BaseLayout>

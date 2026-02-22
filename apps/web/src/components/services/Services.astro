@@ -8,59 +8,20 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
 const icons: Record<string, string> = {
-  websites: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
   ecommerce: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
   mobileApp: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
   systems: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
   saas: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
   ai: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.27A7 7 0 0 1 14 22h-4a7 7 0 0 1-6.73-3H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9.5" cy="15.5" r="1"/><circle cx="14.5" cy="15.5" r="1"/></svg>',
-  inventory: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
-  pos: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-  billing: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
-  booking: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>',
   apiIntegration: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   cloudDevOps: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
   consulting: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
-  teamTraining: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/></svg>',
-  migration: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg>',
-  modernization: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
 };
-
-const images: Record<string, string> = {
-  websites: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=480&h=320&fit=crop&auto=format&q=80',
-  ecommerce: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=480&h=320&fit=crop&auto=format&q=80',
-  mobileApp: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=480&h=320&fit=crop&auto=format&q=80',
-  systems: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=480&h=320&fit=crop&auto=format&q=80',
-  saas: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=480&h=320&fit=crop&auto=format&q=80',
-  ai: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=480&h=320&fit=crop&auto=format&q=80',
-  inventory: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=480&h=320&fit=crop&auto=format&q=80',
-  pos: 'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=480&h=320&fit=crop&auto=format&q=80',
-  billing: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=480&h=320&fit=crop&auto=format&q=80',
-  booking: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=480&h=320&fit=crop&auto=format&q=80',
-  apiIntegration: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=480&h=320&fit=crop&auto=format&q=80',
-  cloudDevOps: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=480&h=320&fit=crop&auto=format&q=80',
-  consulting: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=480&h=320&fit=crop&auto=format&q=80',
-  teamTraining: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=480&h=320&fit=crop&auto=format&q=80',
-  migration: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=480&h=320&fit=crop&auto=format&q=80',
-  modernization: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=480&h=320&fit=crop&auto=format&q=80',
-};
-
-const INITIAL_COUNT = 6;
 
 const serviceKeys = [
-  'websites', 'ecommerce', 'mobileApp', 'systems', 'saas', 'ai',
-  'inventory', 'pos', 'billing', 'booking',
-  'apiIntegration', 'cloudDevOps', 'consulting', 'teamTraining', 'migration', 'modernization',
+  'ecommerce', 'systems', 'saas', 'mobileApp',
+  'cloudDevOps', 'apiIntegration', 'consulting', 'ai',
 ] as const;
-
-const initialKeys = serviceKeys.slice(0, INITIAL_COUNT);
-const extraKeys = serviceKeys.slice(INITIAL_COUNT);
-
-const showMoreLabel = lang === 'es'
-  ? `Ver más servicios (${extraKeys.length})`
-  : `See more services (${extraKeys.length})`;
-
-const showLessLabel = lang === 'es' ? 'Ver menos' : 'See less';
 ---
 
 <section id={lang === 'es' ? 'servicios' : 'services'} class="bg-bg-secondary px-4 py-20 sm:px-6 lg:px-8">
@@ -76,82 +37,16 @@ const showLessLabel = lang === 'es' ? 'Ver menos' : 'See less';
       />
     </div>
 
-    <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {initialKeys.map((key, i) => (
+    <div class="mt-14 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {serviceKeys.map((key, i) => (
         <ServiceCard
           client:visible
           title={t.services[key].title}
           description={t.services[key].description}
           icon={icons[key]}
-          image={images[key]}
           delay={i * 0.06}
         />
       ))}
     </div>
-
-    <div id="extra-services" class="mt-5 hidden gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {extraKeys.map((key, i) => (
-        <ServiceCard
-          client:visible
-          title={t.services[key].title}
-          description={t.services[key].description}
-          icon={icons[key]}
-          image={images[key]}
-          delay={(INITIAL_COUNT + i) * 0.06}
-        />
-      ))}
-    </div>
-
-    <div class="mt-10 text-center">
-      <button
-        id="show-more-services"
-        type="button"
-        class="group inline-flex items-center gap-2 rounded-full border border-border-primary bg-bg-primary px-6 py-3 text-sm font-medium text-text-primary transition-all hover:border-accent-primary hover:text-accent-primary"
-      >
-        <span id="show-more-label">{showMoreLabel}</span>
-        <svg
-          id="show-more-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="transition-transform duration-300"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-    </div>
   </div>
 </section>
-
-<script define:vars={{ showMoreLabel, showLessLabel }}>
-  const btn = document.getElementById('show-more-services');
-  const extra = document.getElementById('extra-services');
-  const label = document.getElementById('show-more-label');
-  const icon = document.getElementById('show-more-icon');
-
-  if (btn && extra && label && icon) {
-    let expanded = false;
-
-    btn.addEventListener('click', () => {
-      expanded = !expanded;
-
-      if (expanded) {
-        extra.classList.remove('hidden');
-        extra.classList.add('grid');
-        label.textContent = showLessLabel;
-        icon.style.transform = 'rotate(180deg)';
-      } else {
-        extra.classList.add('hidden');
-        extra.classList.remove('grid');
-        label.textContent = showMoreLabel;
-        icon.style.transform = 'rotate(0deg)';
-      }
-    });
-  }
-</script>

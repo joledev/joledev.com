@@ -63,7 +63,7 @@ const t = useTranslations(lang);
 
     <!-- Stats Bar -->
     <ScrollReveal client:visible direction="up" delay={0.2}>
-      <div class="stats-grid mt-14 grid grid-cols-3 gap-4 sm:gap-6">
+      <div class="stats-grid mt-14 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
         <div class="stat-card">
           <span class="stat-number">
             <CountUp client:visible value={5} suffix="+" duration={2000} />
@@ -111,7 +111,7 @@ const t = useTranslations(lang);
     border-radius: 1rem;
     background: var(--color-glass);
     backdrop-filter: blur(12px);
-    border: 1px solid var(--color-glass-border);
+    border: 1px solid color-mix(in srgb, var(--color-secondary-primary) 20%, var(--color-glass-border));
     text-align: center;
   }
 

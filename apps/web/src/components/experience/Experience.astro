@@ -21,12 +21,11 @@ const t = useTranslations(lang);
     </div>
 
     <div class="timeline mt-14">
-      {t.experience.items.map((item, i) => (
+      {t.experience.items.slice(0, 4).map((item, i) => (
         <ScrollReveal client:visible direction="up" delay={i * 0.08}>
           <div class="timeline-item">
             <div class="timeline-dot" />
             <div class="timeline-card">
-              <!-- Header: logo + info -->
               <div class="card-header">
                 {item.logo ? (
                   <div class="company-logo">
@@ -57,12 +56,10 @@ const t = useTranslations(lang);
                 </div>
               </div>
 
-              <!-- Description -->
               <p class="mt-3 text-sm leading-relaxed text-text-secondary">
                 {item.description}
               </p>
 
-              <!-- Highlights (expandable) -->
               {item.highlights && item.highlights.length > 0 && (
                 <details class="highlights-details">
                   <summary class="highlights-summary">
@@ -77,14 +74,12 @@ const t = useTranslations(lang);
                 </details>
               )}
 
-              <!-- Products -->
               <div class="mt-3 flex flex-wrap gap-1.5">
                 {item.products.map((product: string) => (
                   <span class="product-tag">{product}</span>
                 ))}
               </div>
 
-              <!-- Stack -->
               <div class="mt-2 flex flex-wrap gap-1.5">
                 {item.stack.map((tech: string) => (
                   <span class="stack-tag">{tech}</span>
@@ -94,9 +89,117 @@ const t = useTranslations(lang);
           </div>
         </ScrollReveal>
       ))}
+
+      <!-- Extra experience (hidden by default, kept in DOM for SEO) -->
+      <div id="extra-experience" class="extra-experience collapsed">
+        {t.experience.items.slice(4).map((item, i) => (
+          <ScrollReveal client:visible direction="up" delay={(i + 4) * 0.08}>
+            <div class="timeline-item">
+              <div class="timeline-dot" />
+              <div class="timeline-card">
+                <div class="card-header">
+                  {item.logo ? (
+                    <div class="company-logo">
+                      <img
+                        src={item.logo}
+                        alt={item.company}
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div class="company-logo company-logo--fallback">
+                      <span>{item.company.charAt(0)}</span>
+                    </div>
+                  )}
+                  <div class="card-info">
+                    <div class="card-top-row">
+                      <h3 class="font-display text-lg font-bold text-text-primary">
+                        {item.company}
+                      </h3>
+                      <span class="period-badge">{item.period}</span>
+                    </div>
+                    <div class="card-role-row">
+                      <span class="role-text">{item.role}</span>
+                      <span class="type-badge">{item.type}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="mt-3 text-sm leading-relaxed text-text-secondary">
+                  {item.description}
+                </p>
+
+                {item.highlights && item.highlights.length > 0 && (
+                  <details class="highlights-details">
+                    <summary class="highlights-summary">
+                      {lang === 'es' ? 'Productos construidos' : 'Products built'} ({item.highlights.length})
+                      <span class="highlights-chevron">&rsaquo;</span>
+                    </summary>
+                    <ul class="highlights-list">
+                      {item.highlights.map((h: string) => (
+                        <li>{h}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  {item.products.map((product: string) => (
+                    <span class="product-tag">{product}</span>
+                  ))}
+                </div>
+
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  {item.stack.map((tech: string) => (
+                    <span class="stack-tag">{tech}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-6 text-center">
+      <button
+        id="toggle-experience"
+        type="button"
+        class="toggle-btn"
+        data-show-label={lang === 'es' ? 'Ver experiencia completa' : 'See full experience'}
+        data-hide-label={lang === 'es' ? 'Ocultar' : 'Hide'}
+      >
+        {lang === 'es' ? 'Ver experiencia completa' : 'See full experience'}
+        <svg class="toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
     </div>
   </div>
 </section>
+
+<script>
+  const btn = document.getElementById('toggle-experience');
+  const extra = document.getElementById('extra-experience');
+
+  if (btn && extra) {
+    const showLabel = btn.dataset.showLabel!;
+    const hideLabel = btn.dataset.hideLabel!;
+    const chevron = btn.querySelector('.toggle-chevron');
+
+    btn.addEventListener('click', () => {
+      const isCollapsed = extra.classList.contains('collapsed');
+      extra.classList.toggle('collapsed');
+
+      if (chevron) {
+        chevron.style.transform = isCollapsed ? 'rotate(180deg)' : '';
+      }
+
+      // Update button text (preserve the SVG)
+      btn.childNodes[0].textContent = isCollapsed ? hideLabel + ' ' : showLabel + ' ';
+    });
+  }
+</script>
 
 <style>
   .timeline {
@@ -130,13 +233,13 @@ const t = useTranslations(lang);
     width: 0.625rem;
     height: 0.625rem;
     border-radius: 50%;
-    background: var(--color-accent-primary);
+    background: var(--color-secondary-primary);
     box-shadow: 0 0 0 3px var(--color-bg-secondary);
   }
 
   .timeline-card {
     padding: 1.25rem 1.5rem;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     background: var(--color-glass);
     backdrop-filter: blur(12px);
     border: 1px solid var(--color-glass-border);
@@ -144,7 +247,7 @@ const t = useTranslations(lang);
   }
 
   .timeline-card:hover {
-    border-color: var(--color-accent-light);
+    border-color: var(--color-secondary-light);
   }
 
   .card-header {
@@ -181,7 +284,7 @@ const t = useTranslations(lang);
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
   }
 
   .card-info {
@@ -215,18 +318,18 @@ const t = useTranslations(lang);
   .role-text {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
   }
 
   .type-badge {
-    font-size: 0.625rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.125rem 0.5rem;
     border-radius: 9999px;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent-primary);
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
   }
 
   .highlights-details {
@@ -241,7 +344,7 @@ const t = useTranslations(lang);
     gap: 0.375rem;
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
     cursor: pointer;
     list-style: none;
     user-select: none;
@@ -283,7 +386,7 @@ const t = useTranslations(lang);
     content: '✓';
     position: absolute;
     left: 0;
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
     font-weight: 700;
     font-size: 0.75rem;
   }
@@ -293,13 +396,13 @@ const t = useTranslations(lang);
     font-weight: 500;
     padding: 0.125rem 0.625rem;
     border-radius: 0.375rem;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent-primary);
-    border: 1px solid color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
+    border: 1px solid color-mix(in srgb, var(--color-secondary-primary) 15%, transparent);
   }
 
   .stack-tag {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     padding: 0.0625rem 0.5rem;
     border-radius: 0.25rem;
@@ -307,5 +410,43 @@ const t = useTranslations(lang);
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
     font-family: var(--font-mono);
+  }
+
+  .extra-experience {
+    overflow: hidden;
+    max-height: 3000px;
+    opacity: 1;
+    transition: max-height 0.5s ease, opacity 0.3s ease;
+  }
+
+  .extra-experience.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  .toggle-btn:hover {
+    background: var(--color-secondary-subtle);
+    border-color: var(--color-secondary-light);
+    color: var(--color-secondary-primary);
+  }
+
+  .toggle-chevron {
+    transition: transform 0.3s ease;
   }
 </style>

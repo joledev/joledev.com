@@ -1,6 +1,22 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/dm-sans';
-@import '@fontsource-variable/jetbrains-mono';
+/* JetBrains Mono — latin + latin-ext only (no cyrillic/greek/vietnamese) */
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-ext-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 
 /* ─── Theme: CSS Custom Properties ──────────────────────── */
 
@@ -15,9 +31,15 @@
   --color-accent-primary: #2563eb;
   --color-accent-light: #60a5fa;
   --color-accent-subtle: #dbeafe;
+  --color-secondary-primary: #0d9488;
+  --color-secondary-light: #14b8a6;
+  --color-secondary-subtle: #ccfbf1;
   --color-border: #e2e8f0;
   --color-glass: rgba(255, 255, 255, 0.7);
   --color-glass-border: rgba(255, 255, 255, 0.2);
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
 }
 
 [data-theme='dark'] {
@@ -30,9 +52,15 @@
   --color-accent-primary: #3b82f6;
   --color-accent-light: #60a5fa;
   --color-accent-subtle: rgba(59, 130, 246, 0.15);
+  --color-secondary-primary: #14b8a6;
+  --color-secondary-light: #2dd4bf;
+  --color-secondary-subtle: rgba(20, 184, 166, 0.15);
   --color-border: #334155;
   --color-glass: rgba(15, 23, 42, 0.7);
   --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
 }
 
 /* ─── Tailwind theme extension via @theme ───────────────── */
@@ -51,9 +79,15 @@
   --color-accent-primary: var(--color-accent-primary);
   --color-accent-light: var(--color-accent-light);
   --color-accent-subtle: var(--color-accent-subtle);
+  --color-secondary-primary: var(--color-secondary-primary);
+  --color-secondary-light: var(--color-secondary-light);
+  --color-secondary-subtle: var(--color-secondary-subtle);
   --color-border: var(--color-border);
   --color-glass: var(--color-glass);
   --color-glass-border: var(--color-glass-border);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
 }
 
 /* ─── Base styles ───────────────────────────────────────── */
@@ -86,6 +120,94 @@ h6 {
 code,
 pre {
   font-family: var(--font-mono);
+}
+
+/* ─── Buttons ──────────────────────────────────────────── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--color-accent-primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  min-height: 44px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  border: 1.5px solid var(--color-accent-primary);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-accent-primary);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  min-height: 44px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 200ms ease, transform 200ms ease;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.btn-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* ─── Page transitions (View Transitions API) ──────────── */
+
+::view-transition-old(root) {
+  animation: vt-fade-out 200ms ease-out;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 200ms ease-in;
+}
+
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0s;
+  }
 }
 
 /* ─── Print styles ─────────────────────────────────────── */

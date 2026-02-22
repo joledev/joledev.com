@@ -47,7 +47,9 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    min-width: 44px;
+    min-height: 44px;
     background: transparent;
     border: none;
     cursor: pointer;

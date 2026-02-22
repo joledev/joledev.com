@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { toast } from '../../lib/toast.svelte';
   import {
     PROJECT_TYPES,
     FEATURES,
@@ -65,6 +66,28 @@
   let contactCompany = $state('');
   let contactNotes = $state('');
   let formErrors = $state<Record<string, string>>({});
+  let fieldTouched = $state<Record<string, boolean>>({});
+
+  function validateField(field: string) {
+    const errors = { ...formErrors };
+    if (field === 'name') {
+      if (!contactName.trim()) {
+        errors.name = lang === 'es' ? 'El nombre es requerido' : 'Name is required';
+      } else {
+        delete errors.name;
+      }
+    }
+    if (field === 'email') {
+      if (!contactEmail.trim()) {
+        errors.email = lang === 'es' ? 'El email es requerido' : 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+        errors.email = lang === 'es' ? 'Email no válido' : 'Invalid email';
+      } else {
+        delete errors.email;
+      }
+    }
+    formErrors = errors;
+  }
 
   // Payment plan state
   let selectedPlanKey = $state('fullPayment');
@@ -246,11 +269,13 @@
       }
 
       submitted = true;
+      toast.success(labels.successTitle);
     } catch (err: unknown) {
       submitError =
         lang === 'es'
           ? 'Hubo un error al enviar. Por favor intenta de nuevo.'
           : 'There was an error submitting. Please try again.';
+      toast.error(submitError);
     } finally {
       submitting = false;
     }
@@ -424,7 +449,9 @@
                       class="option-detail-img"
                       src={pt.image}
                       alt={pt.label[lang]}
-                      loading="eager"
+                      width="600"
+                      height="140"
+                      loading="lazy"
                     />
                   {/if}
                   {#if pt.description}
@@ -628,15 +655,25 @@
           <h3 class="contact-title">{labels.contactTitle}</h3>
 
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && contactName.trim()} class:field-invalid={fieldTouched.name && formErrors.name}>
               <label for="q-name">{labels.name} *</label>
-              <input id="q-name" type="text" bind:value={contactName} required />
-              {#if formErrors.name}<p class="field-error">{formErrors.name}</p>{/if}
+              <div class="input-wrapper">
+                <input id="q-name" type="text" bind:value={contactName} required onblur={() => { fieldTouched.name = true; validateField('name'); }} />
+                {#if fieldTouched.name && !formErrors.name && contactName.trim()}
+                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                {/if}
+              </div>
+              {#if fieldTouched.name && formErrors.name}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</p>{/if}
             </div>
-            <div class="form-field">
+            <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && contactEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email}>
               <label for="q-email">{labels.email} *</label>
-              <input id="q-email" type="email" bind:value={contactEmail} required />
-              {#if formErrors.email}<p class="field-error">{formErrors.email}</p>{/if}
+              <div class="input-wrapper">
+                <input id="q-email" type="email" bind:value={contactEmail} required onblur={() => { fieldTouched.email = true; validateField('email'); }} />
+                {#if fieldTouched.email && !formErrors.email && contactEmail.trim()}
+                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                {/if}
+              </div>
+              {#if fieldTouched.email && formErrors.email}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</p>{/if}
             </div>
             <div class="form-field">
               <label for="q-phone">{labels.phone}</label>
@@ -658,6 +695,7 @@
 
           <div class="submit-actions">
             <button class="btn-primary" onclick={submitQuote} disabled={submitting} type="button">
+              {#if submitting}<span class="btn-spinner"></span>{/if}
               {submitting ? labels.sending : labels.send}
             </button>
           </div>
@@ -695,6 +733,10 @@
     padding: 2rem;
     max-width: 820px;
     margin: 0 auto;
+  }
+
+  @media (max-width: 767px) {
+    .quoter-panel { padding: 1.25rem; }
   }
 
   .progress-bar {
@@ -1219,30 +1261,53 @@
 
   .form-field input,
   .form-field textarea {
-    padding: 0.625rem 0.75rem;
-    border: 1px solid var(--color-border);
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--color-border);
     border-radius: 0.5rem;
     background: var(--color-bg-elevated);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
-    transition: border-color 0.2s;
+    font-size: 0.9375rem;
+    min-height: 44px;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   .form-field input:focus,
   .form-field textarea:focus {
     outline: none;
     border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   }
 
+  .input-wrapper {
+    position: relative;
+  }
+
+  .field-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    pointer-events: none;
+  }
+  .field-icon-valid { color: var(--color-success); }
+
+  .field-valid input { border-color: var(--color-success); }
+  .field-invalid input { border-color: var(--color-error); }
+
   .field-error {
-    font-size: 0.75rem;
-    color: #ef4444;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--color-error);
+    margin-top: 0.25rem;
   }
 
   .submit-error {
     font-size: 0.875rem;
-    color: #ef4444;
+    color: var(--color-error);
     text-align: center;
     margin: 1rem 0;
   }
@@ -1262,38 +1327,6 @@
     border-top: 1px solid var(--color-border);
   }
 
-  /* Buttons */
-  .btn-primary {
-    padding: 0.75rem 2rem;
-    border-radius: 0.5rem;
-    border: none;
-    background: var(--color-accent-primary);
-    color: #fff;
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.2s;
-  }
-
-  .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: scale(1.02); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-secondary {
-    padding: 0.75rem 2rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-
-  .btn-secondary:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
-
   /* Success */
   .success-screen {
     text-align: center;
@@ -1301,7 +1334,7 @@
   }
 
   .success-check {
-    color: #22c55e;
+    color: var(--color-success);
     margin-bottom: 1.5rem;
     animation: popIn 0.4s ease-out;
   }

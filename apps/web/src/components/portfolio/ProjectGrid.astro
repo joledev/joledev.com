@@ -30,6 +30,24 @@ const projectsPath = lang === 'es' ? '/es/proyectos/' : '/en/projects/';
       />
     </div>
 
+    <!-- Coming soon state — project cards temporarily hidden -->
+    <ScrollReveal client:visible delay={0.15}>
+      <div class="mt-14 flex flex-col items-center justify-center rounded-xl border border-border bg-glass px-6 py-16 text-center backdrop-blur-sm">
+        <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-subtle text-secondary-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+        </div>
+        <h3 class="font-display text-xl font-bold text-text-primary">
+          {lang === 'es' ? 'Próximamente' : 'Coming Soon'}
+        </h3>
+        <p class="mt-2 max-w-sm text-sm text-text-secondary">
+          {lang === 'es'
+            ? 'Estoy documentando mis proyectos más destacados. Vuelve pronto.'
+            : "I'm documenting my best work. Check back soon."}
+        </p>
+      </div>
+    </ScrollReveal>
+
+    <!-- Original project cards and "view all" link (hidden until projects are ready)
     <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((project, i) => (
         <ProjectCard
@@ -57,5 +75,6 @@ const projectsPath = lang === 'es' ? '/es/proyectos/' : '/en/projects/';
         </a>
       </div>
     </ScrollReveal>
+    -->
   </div>
 </section>

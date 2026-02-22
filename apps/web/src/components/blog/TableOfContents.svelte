@@ -172,12 +172,12 @@
   }
 
   .toc-link:hover {
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
   }
 
   .toc-link.active {
-    color: var(--color-accent-primary);
-    border-left-color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
+    border-left-color: var(--color-secondary-primary);
     font-weight: 500;
   }
 

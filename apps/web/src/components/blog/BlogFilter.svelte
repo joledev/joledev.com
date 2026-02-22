@@ -75,23 +75,24 @@
   <p class="no-posts">{noPostsMessage}</p>
 {:else}
   <div class="posts-grid">
-    {#each filteredPosts as post (post.id)}
-      <a href={`${blogBasePath}${post.id.replace(/^(es|en)\//, '')}/`} class="post-card">
-        <div class="post-image"></div>
-        <div class="post-body">
-          <div class="post-meta">
-            <time datetime={new Date(post.data.pubDate).toISOString()}>
-              {formatDate(post.data.pubDate)}
-            </time>
-            <span class="category-badge">{categoryLabels[post.data.category] ?? post.data.category}</span>
-          </div>
-          <h3 class="post-title">{post.data.title}</h3>
-          <p class="post-desc">{post.data.description}</p>
-          <div class="post-tags">
-            {#each post.data.tags as tag}
-              <span class="tag">{tag}</span>
-            {/each}
-          </div>
+    {#each filteredPosts as post, i (post.id)}
+      <a
+        href={`${blogBasePath}${post.id.replace(/^(es|en)\//, '')}/`}
+        class="post-card"
+        style="--border-accent: {i === 0 ? 'var(--color-accent-primary)' : 'var(--color-secondary-primary)'};"
+      >
+        <div class="post-top">
+          <span class="category-badge">{categoryLabels[post.data.category] ?? post.data.category}</span>
+        </div>
+        <h3 class="post-title">{post.data.title}</h3>
+        <p class="post-desc">{post.data.description}</p>
+        <div class="post-bottom">
+          <time datetime={new Date(post.data.pubDate).toISOString()}>
+            {formatDate(post.data.pubDate)}
+          </time>
+          <span class="read-more">
+            {readMoreLabel} →
+          </span>
         </div>
       </a>
     {/each}
@@ -130,14 +131,14 @@
   }
 
   .filter-pill:hover {
-    background: var(--color-accent-subtle);
-    border-color: var(--color-accent-light);
-    color: var(--color-accent-primary);
+    background: var(--color-secondary-subtle);
+    border-color: var(--color-secondary-light);
+    color: var(--color-secondary-primary);
   }
 
   .filter-pill.active {
-    background: var(--color-accent-primary);
-    border-color: var(--color-accent-primary);
+    background: var(--color-secondary-primary);
+    border-color: var(--color-secondary-primary);
     color: #fff;
   }
 
@@ -163,60 +164,48 @@
   }
 
   .post-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
     text-decoration: none;
     border-radius: 1rem;
     border: 1px solid var(--color-border);
+    border-left: 3px solid var(--border-accent);
     background: var(--color-bg-elevated);
-    overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    padding: 1.5rem;
+    min-height: 12rem;
+    transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   }
 
   .post-card:hover {
-    border-color: var(--color-accent-light);
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.06);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+    transform: translateY(-4px);
   }
 
-  .post-image {
-    aspect-ratio: 16 / 9;
-    background: linear-gradient(135deg, var(--color-accent-subtle), var(--color-bg-secondary));
-  }
-
-  .post-body {
-    padding: 1.25rem;
-  }
-
-  .post-meta {
+  .post-top {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .post-meta time {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
   }
 
   .category-badge {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.15rem 0.5rem;
+    padding: 0.2rem 0.625rem;
     border-radius: 9999px;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent-primary);
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
   }
 
   .post-title {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.125rem;
-    line-height: 1.4;
+    font-size: 1.25rem;
+    line-height: 1.2;
     color: var(--color-text-primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.625rem;
     transition: color 0.2s;
   }
 
@@ -232,21 +221,31 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 0.75rem;
+    margin-bottom: auto;
   }
 
-  .post-tags {
+  .post-bottom {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
   }
 
-  .tag {
+  .post-bottom time {
     font-size: 0.75rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 0.375rem;
-    background: var(--color-accent-subtle);
+    color: var(--color-text-muted);
+  }
+
+  .read-more {
+    font-size: 0.8125rem;
+    font-weight: 600;
     color: var(--color-accent-primary);
-    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .post-card:hover .read-more {
+    color: var(--color-accent-light);
   }
 </style>

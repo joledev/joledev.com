@@ -15,6 +15,15 @@ const posts = allPosts
 
 const blogPath = `/${lang}/blog/`;
 
+const categoryLabels: Record<string, Record<string, string>> = {
+  tutorial: { es: 'Tutorial', en: 'Tutorial' },
+  'case-study': { es: 'Caso de estudio', en: 'Case Study' },
+  opinion: { es: 'Opinión', en: 'Opinion' },
+  project: { es: 'Proyecto', en: 'Project' },
+};
+
+const readMoreLabel = lang === 'es' ? 'Leer más' : 'Read more';
+
 function formatDate(date: Date): string {
   return date.toLocaleDateString(lang === 'es' ? 'es-MX' : 'en-US', {
     year: 'numeric',
@@ -40,29 +49,31 @@ function formatDate(date: Date): string {
     <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((post, i) => (
         <ScrollReveal client:visible delay={i * 0.1}>
-          <article class="group overflow-hidden rounded-xl border border-border bg-bg-elevated transition-all duration-200 hover:border-accent-light hover:shadow-lg hover:shadow-accent-primary/5">
-            <!-- Image placeholder -->
-            <div class="aspect-video bg-gradient-to-br from-accent-subtle to-bg-secondary" />
-
-            <div class="p-5">
-              <time class="text-xs text-text-muted" datetime={post.data.pubDate.toISOString()}>
+          <a
+            href={`${blogPath}${post.id.replace(/^(es|en)\//, '')}/`}
+            class="post-card group"
+            style={`--border-accent: ${i === 0 ? 'var(--color-accent-primary)' : 'var(--color-secondary-primary)'};`}
+          >
+            <div class="post-top">
+              <span class="post-category">
+                {categoryLabels[post.data.category]?.[lang] ?? post.data.category}
+              </span>
+            </div>
+            <h3 class="post-title">
+              {post.data.title}
+            </h3>
+            <p class="post-desc">
+              {post.data.description}
+            </p>
+            <div class="post-bottom">
+              <time datetime={post.data.pubDate.toISOString()}>
                 {formatDate(post.data.pubDate)}
               </time>
-              <h3 class="mt-2 font-display text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-accent-primary">
-                {post.data.title}
-              </h3>
-              <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-text-secondary">
-                {post.data.description}
-              </p>
-              <div class="mt-3 flex flex-wrap gap-1.5">
-                {post.data.tags.map((tag: string) => (
-                  <span class="rounded-md bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent-primary">
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              <span class="post-read-more">
+                {readMoreLabel} →
+              </span>
             </div>
-          </article>
+          </a>
         </ScrollReveal>
       ))}
     </div>
@@ -80,3 +91,92 @@ function formatDate(date: Date): string {
     </ScrollReveal>
   </div>
 </section>
+
+<style>
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 1rem;
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--border-accent);
+    background: var(--color-bg-elevated);
+    padding: 1.5rem;
+    min-height: 12rem;
+    transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .post-card:hover {
+    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+    transform: translateY(-4px);
+  }
+
+  .post-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .post-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.625rem;
+    border-radius: 9999px;
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
+  }
+
+  .post-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    margin-bottom: 0.625rem;
+    transition: color 0.2s;
+  }
+
+  .post-card:hover .post-title {
+    color: var(--color-accent-primary);
+  }
+
+  .post-desc {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: auto;
+  }
+
+  .post-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .post-bottom time {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .post-read-more {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-accent-primary);
+    transition: color 0.2s;
+  }
+
+  .post-card:hover .post-read-more {
+    color: var(--color-accent-light);
+  }
+</style>

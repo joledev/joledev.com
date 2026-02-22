@@ -94,7 +94,7 @@
   };
 
   function getTechColor(tag: string): string {
-    return TECH_ICONS[tag]?.color || 'var(--color-accent-primary)';
+    return TECH_ICONS[tag]?.color || 'var(--color-secondary-primary)';
   }
 
   function setFilter(cat: string) {
@@ -185,7 +185,7 @@
         class="project-card"
       >
         <div class="card-image">
-          <img src={project.data.heroImage} alt={project.data.title} loading="lazy" />
+          <img src={project.data.heroImage} alt={project.data.title} width="640" height="400" loading="lazy" />
           <span class="card-badge">{getCategoryLabel(project.data.category)}</span>
           <div class="card-overlay">
             <p>{project.data.description}</p>
@@ -240,17 +240,17 @@
   }
 
   .filter-pill:hover {
-    border-color: var(--color-accent-primary);
-    color: var(--color-accent-primary);
-    background: var(--color-accent-subtle);
+    border-color: var(--color-secondary-primary);
+    color: var(--color-secondary-primary);
+    background: var(--color-secondary-subtle);
     transform: translateY(-1px);
   }
 
   .filter-pill.active {
-    background: var(--color-accent-primary);
-    border-color: var(--color-accent-primary);
+    background: var(--color-secondary-primary);
+    border-color: var(--color-secondary-primary);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
   }
 
   /* ─── Results bar ─── */
@@ -278,7 +278,7 @@
   }
 
   .results-filter em {
-    color: var(--color-accent-primary);
+    color: var(--color-secondary-primary);
     font-style: normal;
     font-weight: 600;
   }
@@ -331,8 +331,8 @@
   }
 
   .project-card:hover {
-    border-color: var(--color-accent-light);
-    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-secondary-light);
+    box-shadow: 0 12px 40px rgba(13, 148, 136, 0.1);
     transform: translateY(-4px);
   }
 

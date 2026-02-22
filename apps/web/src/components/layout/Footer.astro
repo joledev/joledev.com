@@ -1,4 +1,5 @@
 ---
+import ScrollReveal from '../ui/ScrollReveal.svelte';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
@@ -17,55 +18,61 @@ const navItems = [
   <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
     <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
       <!-- Col 1: Brand -->
-      <div>
-        <a href={`/${lang}/`} class="font-display text-xl font-bold text-accent-primary">
-          JoleDev
-        </a>
-        <p class="mt-2 text-sm leading-relaxed text-text-secondary">
-          {t.footer.tagline}
-        </p>
-      </div>
+      <ScrollReveal client:visible delay={0}>
+        <div>
+          <a href={`/${lang}/`} class="font-display text-xl font-bold text-accent-primary">
+            JoleDev
+          </a>
+          <p class="mt-2 text-sm leading-relaxed text-text-secondary">
+            {t.footer.tagline}
+          </p>
+        </div>
+      </ScrollReveal>
 
       <!-- Col 2: Quick Links -->
-      <div>
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-text-muted">
-          {t.footer.quickLinks}
-        </h3>
-        <nav class="mt-3 flex flex-col gap-2">
-          {navItems.map((item) => (
-            <a
-              href={item.href}
-              class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </div>
+      <ScrollReveal client:visible delay={0.1}>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wider text-text-muted">
+            {t.footer.quickLinks}
+          </h3>
+          <nav class="mt-3 flex flex-col gap-2">
+            {navItems.map((item) => (
+              <a
+                href={item.href}
+                class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </ScrollReveal>
 
       <!-- Col 3: Contact -->
-      <div>
-        <h3 class="text-sm font-semibold uppercase tracking-wider text-text-muted">
-          {t.footer.contact}
-        </h3>
-        <div class="mt-3 flex flex-col gap-2">
-          <a
-            href={`mailto:${t.common.contactEmail}`}
-            class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
-          >
-            {t.common.contactEmail}
-          </a>
-          <p class="text-sm text-text-secondary">{t.footer.location}</p>
-          <a
-            href="https://status.joledev.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
-          >
-            {t.footer.status}
-          </a>
+      <ScrollReveal client:visible delay={0.15}>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wider text-text-muted">
+            {t.footer.contact}
+          </h3>
+          <div class="mt-3 flex flex-col gap-2">
+            <a
+              href={`mailto:${t.common.contactEmail}`}
+              class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
+            >
+              {t.common.contactEmail}
+            </a>
+            <p class="text-sm text-text-secondary">{t.footer.location}</p>
+            <a
+              href="https://status.joledev.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
+            >
+              {t.footer.status}
+            </a>
+          </div>
         </div>
-      </div>
+      </ScrollReveal>
     </div>
 
     <!-- Separator + Copyright -->

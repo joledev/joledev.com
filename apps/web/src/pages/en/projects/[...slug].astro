@@ -73,6 +73,9 @@ const TECH_COLORS: Record<string, string> = {
         <img
           src={project.data.heroImage}
           alt={project.data.title}
+          width="800"
+          height="450"
+          loading="eager"
         />
         <div class="hero-gradient"></div>
         <div class="hero-badge">
@@ -106,8 +109,8 @@ const TECH_COLORS: Record<string, string> = {
         </h2>
         <div class="tags-list">
           {project.data.tags.map((tag: string) => (
-            <span class="tech-tag" style={`--tag-color: ${TECH_COLORS[tag] || 'var(--color-accent-primary)'}`}>
-              <span class="tech-dot" style={`background: ${TECH_COLORS[tag] || 'var(--color-accent-primary)'}`}></span>
+            <span class="tech-tag" style={`--tag-color: ${TECH_COLORS[tag] || 'var(--color-secondary-primary)'}`}>
+              <span class="tech-dot" style={`background: ${TECH_COLORS[tag] || 'var(--color-secondary-primary)'}`}></span>
               {tag}
             </span>
           ))}
@@ -124,7 +127,7 @@ const TECH_COLORS: Record<string, string> = {
           <div class="screenshots-grid">
             {project.data.screenshots.map((src: string, i: number) => (
               <div class="screenshot-card">
-                <img src={src} alt={`Screenshot ${i + 1}`} loading="lazy" />
+                <img src={src} alt={`Screenshot ${i + 1}`} width="800" height="450" loading="lazy" />
               </div>
             ))}
           </div>
@@ -310,22 +313,22 @@ const TECH_COLORS: Record<string, string> = {
   }
 
   .category-pill {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 0.3rem 0.875rem;
     border-radius: 9999px;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent-primary);
-    border: 1px solid color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
+    border: 1px solid color-mix(in srgb, var(--color-secondary-primary) 20%, transparent);
   }
 
   .featured-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     padding: 0.3rem 0.875rem;
     border-radius: 9999px;

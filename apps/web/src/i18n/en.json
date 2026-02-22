@@ -61,6 +61,47 @@
         ]
       },
       {
+        "company": "Coop. Leyes de Reforma",
+        "logo": "/logos/leyes-de-reforma.png",
+        "role": "SaaS Architect",
+        "type": "Hybrid",
+        "period": "Nov 2023 — Present",
+        "description": "Complete digital ecosystem with multiple apps and bots, processing 10,000+ monthly transactions for the cooperative's integral operation.",
+        "products": ["WhatsApp Bot", "Members Mobile App", "Payroll", "Admin System", "Landing Page"],
+        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
+        "highlights": [
+          "Institutional landing page",
+          "Complete cooperative management admin system",
+          "Payroll calculator based on product inputs and outputs",
+          "WhatsApp bot for employee requests (orders, status, history)",
+          "Members mobile app: inputs/outputs, supply costs, estimated and official payroll, news and achievements",
+          "Operational process automation",
+          "Error tracking system with email notifications",
+          "Automatic CFDI billing"
+        ]
+      },
+      {
+        "company": "Coop. Progreso",
+        "logo": "/logos/progreso.png",
+        "role": "SaaS Architect",
+        "type": "Hybrid",
+        "period": "Dec 2022 — Present",
+        "description": "Full digital transformation of the cooperative's operation — the largest project in scope, with Play Store mobile app for 50+ users.",
+        "products": ["Membership App", "CMS Dashboard", "Nextcloud", "Warehouse", "Reports", "Landing Page"],
+        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
+        "highlights": [
+          "Receipt generation and automation",
+          "Product processing and tracking",
+          "Landing page with CMS — all content manageable from a dashboard",
+          "Nextcloud work environments (video calls, cloud storage, chats)",
+          "Granular user and permissions system",
+          "Digital membership app on Play Store (App Store coming soon)",
+          "Warehouse control and delivery automation",
+          "Real-time reports",
+          "Automatic error tracking with email notifications"
+        ]
+      },
+      {
         "company": "AforeCoppel",
         "logo": "/logos/aforecoppel.png",
         "role": "Software Architect",
@@ -107,26 +148,6 @@
         ]
       },
       {
-        "company": "Coop. Leyes de Reforma",
-        "logo": "/logos/leyes-de-reforma.png",
-        "role": "SaaS Architect",
-        "type": "Hybrid",
-        "period": "Nov 2023 — Present",
-        "description": "Complete digital ecosystem with multiple apps and bots, processing 10,000+ monthly transactions for the cooperative's integral operation.",
-        "products": ["WhatsApp Bot", "Members Mobile App", "Payroll", "Admin System", "Landing Page"],
-        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
-        "highlights": [
-          "Institutional landing page",
-          "Complete cooperative management admin system",
-          "Payroll calculator based on product inputs and outputs",
-          "WhatsApp bot for employee requests (orders, status, history)",
-          "Members mobile app: inputs/outputs, supply costs, estimated and official payroll, news and achievements",
-          "Operational process automation",
-          "Error tracking system with email notifications",
-          "Automatic CFDI billing"
-        ]
-      },
-      {
         "company": "Coop. Emancipación",
         "logo": "/logos/emancipacion.png",
         "role": "Full Stack Developer",
@@ -139,27 +160,6 @@
           "Minimalist e-commerce with functionality-focused design",
           "News portal with automated newsletters (2,000+ subscribers)",
           "Architecture designed for easy maintenance and scalability"
-        ]
-      },
-      {
-        "company": "Coop. Progreso",
-        "logo": "/logos/progreso.png",
-        "role": "SaaS Architect",
-        "type": "Hybrid",
-        "period": "Dec 2022 — Present",
-        "description": "Full digital transformation of the cooperative's operation — the largest project in scope, with Play Store mobile app for 50+ users.",
-        "products": ["Membership App", "CMS Dashboard", "Nextcloud", "Warehouse", "Reports", "Landing Page"],
-        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
-        "highlights": [
-          "Receipt generation and automation",
-          "Product processing and tracking",
-          "Landing page with CMS — all content manageable from a dashboard",
-          "Nextcloud work environments (video calls, cloud storage, chats)",
-          "Granular user and permissions system",
-          "Digital membership app on Play Store (App Store coming soon)",
-          "Warehouse control and delivery automation",
-          "Real-time reports",
-          "Automatic error tracking with email notifications"
         ]
       },
       {

@@ -1,155 +1,269 @@
 ---
 title: "Serverless vs. VPS: what nobody tells you when you work alone"
-description: "After years choosing infrastructure for real projects, I share my process for deciding between serverless and a VPS — and why I ended up where I did."
+description: "Real costs, cold starts, security, and why I ended up running K3s on a $15 USD VPS instead of Lambda — with actual numbers, diagrams, and a concrete decision framework."
 pubDate: 2026-02-15
-tags: ["serverless", "vps", "architecture", "freelance", "devops", "go", "svelte"]
+updatedDate: 2026-02-22
+tags: ["serverless", "vps", "architecture", "freelance", "devops", "kubernetes", "go"]
 category: "opinion"
 lang: "en"
 draft: false
 ---
 
-A couple of years ago I sat down to redesign the way I delivered projects. I'd been working with shared hosting, the occasional half-configured VPS, and that constant nagging feeling that "I should be using something more modern." Serverless was everywhere: Lambda, Cloud Functions, managed containers. The narrative was clear — if you're not in the cloud, you're falling behind.
+Last year a fishing cooperative in Ensenada asked me to build a system for logging catches, generating regulatory reports for CONAPESCA, and tracking cold-storage inventory. Thirty users max. My first instinct was to build it all on AWS: Lambda for the API, DynamoDB for data, S3 for documents, API Gateway up front. Modern, scalable, "correct".
 
-So I did what any curious developer would do: I dove in headfirst. I set up projects on AWS, experimented with Lambda and API Gateway, tried DynamoDB, built pipelines with Step Functions. And I learned a lot. But I also learned something that nobody mentioned in the tutorials or Twitter threads: **that serverless wasn't designed to solve the problems I actually had**.
+Then I did the math. The system would cost more in monthly infrastructure than the cooperative paid for internet. So I deployed it on a $15 VPS and it's been running for months without a single incident.
 
-This article isn't a generic "pros and cons" comparison. It's what I discovered after going back and forth between both worlds, and why my current infrastructure looks the way it does.
+That experience crystallized something I'd been suspecting: **the infrastructure the industry recommends and the infrastructure a freelancer actually needs are fundamentally different things**. This article is the long version of that argument — with numbers, code, and diagrams of what I actually run.
 
-## The starting problem
+## The real costs: money and time
 
-When you work alone or on a very small team, your scarcest resource isn't compute or storage — it's your time. Every hour you spend on infrastructure is an hour you're not building features, serving clients, or simply resting so you don't burn out.
+The conversation about serverless costs always starts with "Lambda is free up to 1 million requests per month." That's true. It's also irrelevant, because Lambda doesn't run alone.
 
-And that's where I started noticing a disconnect between what the industry recommends and what I actually needed. Most articles about cloud architecture are written from the perspective of teams with at least a dedicated DevOps engineer, monthly infrastructure budgets in the four figures, and traffic volumes that justify the complexity. But when your client is a local company with 50 employees that needs an internal system, that context simply doesn't apply.
+Let's do the math with a real project: a Go API with 3 endpoints, a relational database, and email sending. Basically what my portfolio runs.
 
-I'm not saying serverless is bad. I'm saying the right question isn't "serverless or VPS?" but rather "what problem am I solving and what's the most direct way to solve it?"
+### Serverless (AWS)
 
-## What I discovered using serverless on real projects
+| Service | Monthly cost |
+|---------|-------------|
+| Lambda (50K invocations, 256MB, 200ms avg) | ~$0.20 |
+| API Gateway (50K requests) | ~$0.18 |
+| RDS PostgreSQL (db.t4g.micro, minimum) | $12.40 |
+| NAT Gateway (if Lambda is in VPC) | $32.40 + data |
+| CloudWatch Logs (5GB ingestion) | $2.50 |
+| Secrets Manager (3 secrets) | $1.20 |
+| Route 53 (hosted zone) | $0.50 |
+| **Total** | **~$49 - $70** |
 
-My first serious project with Lambda was a notification system. The logic was straightforward: receive an event, process data, send an email or a message. On paper, the perfect serverless use case — short functions, event-driven, stateless.
+Lambda compute is pennies. Everything else is what kills you. The NAT Gateway in particular is absurd: $32 a month for the privilege of letting your function talk to your database inside a VPC. If you don't use a VPC (and make your RDS public), you have a security problem. If you do, you pay the tax.
 
-And it worked. But the road to get there was revealing.
+### VPS (what I actually use)
 
-Setting up IAM permissions took longer than I expected. Not because it's conceptually difficult, but because AWS's permission model is absurdly granular. Each function needed a role, each role needed specific policies, and an error in any policy resulted in a cryptic message that sent you to Stack Overflow to figure out which permission was missing. For a team with a security engineer who handles that, it's not a problem. For me, alone, it was pure friction.
+| Component | Monthly cost |
+|-----------|-------------|
+| Hetzner CX22 (2 vCPU, 4GB RAM) | $5.39 |
+| Domain (.com) | ~$1.00 (prorated) |
+| **Total** | **~$6.40** |
 
-Then came debugging. When something failed in Lambda, the flow was: check CloudWatch logs (which have their own pricing), find the request ID, locate the error, make a change, deploy, wait for the cold start, and test again. Compare that with having a server where you run `docker logs` and see everything in real time, or set a breakpoint and debug directly.
+On that same VPS I run my portfolio (joledev.com), the quoter API, the scheduler API, a monitoring dashboard with Gatus, and I still have over 3GB of RAM free. I could fit two more client projects before needing an upgrade.
 
-Cost was also a surprise. Lambda compute is cheap, yes. But API Gateway charges per request. If you need a relational database, RDS has a monthly base cost that doesn't go below $15 USD even if you're not using it. If your Lambda needs to access resources inside a VPC, you need a NAT Gateway — which costs around $30 USD/month just for existing. CloudWatch charges for log ingestion. Suddenly, a project that ran completely on a $10 VPS was costing me $50-70 monthly on AWS. And that's not counting my time configuring everything.
+The difference isn't 10x — it's **nearly an order of magnitude**. And that's without counting the cost of my time. Configuring IAM policies, debugging in CloudWatch, managing Lambda concurrency limits... those are hours that simply don't exist on the VPS.
 
-[AWS's pricing documentation](https://aws.amazon.com/lambda/pricing/) is transparent about compute costs, but the collateral costs — the Gateway, the NAT, the logs, artifact storage — are what catch you off guard.
+### The cost nobody counts: cold starts
 
-## The moment of reflection
+When a Lambda function hasn't been invoked for ~15 minutes, AWS destroys the container. The next invocation has to create a new one, load your code, and initialize the runtime. That's a cold start.
 
-After three or four projects like this, I had to sit down and think honestly. Was I using serverless because it solved a real problem, or because I wanted it on my resume? The answer was uncomfortable.
+With Go (which compiles to a binary), cold starts hover around **300-500ms**. With Node.js or Python, it goes up to **500ms-1.5s**. With Java or .NET, you can hit **3-5 seconds**.
 
-The reality is that most of my clients have predictable traffic. There are no Black Friday spikes. There are no millions of concurrent requests. There are 30, 50, maybe 200 users accessing an internal system during business hours. For that usage pattern, a server running 24/7 for $15-25 a month isn't waste — it's simplicity.
+For a cron that generates reports, it doesn't matter. For an API a user is waiting on, 500ms of overhead is the difference between "fast" and "why is this slow?". There are mitigations — provisioned concurrency, keep-alive functions — but each one adds complexity and cost.
 
-And simplicity has enormous value that's hard to quantify. When something breaks at 11 PM (because it always breaks at 11 PM), I want to be able to SSH in, check the logs, identify the problem, and fix it. I don't want to open the AWS console, navigate between 6 different services, and discover that the error is in a Step Function step that triggers a Lambda that writes to DynamoDB. I want to see a clear stack trace in one place.
+On a VPS, the Go process is already running. It responds in **1-5ms**. No warm-up, no cold start, no variability. Your application's latency is your code's latency, period.
 
-## So, serverless is useless?
+## The architecture: two worlds
 
-That's not what I'm saying. Serverless solves real, concrete problems. It solves them very well. But those problems are specific:
+Here are both approaches side by side. The first is what I'd have to build on AWS. The second is what actually runs on my VPS.
 
-**Workloads that scale from zero to thousands and back to zero.** If you have an event that generates massive traffic for a few hours and then nothing, paying for a 24/7 server would be wasting money. Serverless scales automatically and you only pay for what you use. This is particularly valuable for things like batch file processing, where you receive a large batch of documents once a day and the rest of the time there's nothing to process.
+### Serverless architecture (AWS)
 
-**Isolated functions that don't justify their own server.** A webhook that receives notifications from an external service and processes them. A cron that generates a PDF report every Monday. An endpoint that resizes images on upload. These are functions that run sporadically, last seconds, and don't need to maintain state. This is the sweet spot for Lambda and Cloud Functions.
+<div class="mermaid">
+graph TB
+    Client[Client] --> APIGW[API Gateway<br/>~$0.18/50K req]
+    APIGW --> WAF[WAF/Throttling]
+    WAF --> Lambda1[Lambda: Quoter<br/>Cold start: 300-500ms]
+    WAF --> Lambda2[Lambda: Scheduler<br/>Cold start: 300-500ms]
+    Lambda1 --> RDS[(RDS PostgreSQL<br/>$12.40/mo minimum)]
+    Lambda2 --> RDS
+    Lambda1 --> SES[SES - Email]
+    Lambda2 --> SES
+    Lambda1 --> CW[CloudWatch<br/>$2.50/mo logs]
+    Lambda2 --> CW
+    subgraph VPC [VPC - NAT Gateway $32.40/mo]
+        Lambda1
+        Lambda2
+        RDS
+    end
+    IAM[IAM Roles<br/>1 per function + policies] -.-> Lambda1
+    IAM -.-> Lambda2
+    SM[Secrets Manager<br/>$1.20/mo] -.-> Lambda1
+    SM -.-> Lambda2
+</div>
 
-**Integrations within an existing cloud ecosystem.** If your client already has all their infrastructure on AWS and wants to add new functionality, fighting against the ecosystem makes no sense. You use what's already there.
+Every box is a service to configure, monitor, and pay for. The Lambda function itself is the simplest part of the diagram — everything around it is the real complexity.
 
-The problem is when you take these advantages and extrapolate them to your entire architecture. I've seen (and made the mistake of building) entire applications where every endpoint is a Lambda, state is managed between DynamoDB and S3, and communication between services goes through SQS and SNS. It works, but the operational complexity is disproportionate to what the project actually needs.
+### VPS architecture with K3s (what I use)
 
-## The road back to VPS (with lessons learned)
+<div class="mermaid">
+graph TB
+    Client[Client] --> Traefik[Traefik Ingress<br/>Auto TLS via cert-manager]
+    subgraph K3s [K3s — VPS $5.39/mo]
+        Traefik --> Web[Pod: Web<br/>Astro + Nginx]
+        Traefik --> Quoter[Pod: API Quoter<br/>Go — 15MB RAM]
+        Traefik --> Scheduler[Pod: API Scheduler<br/>Go — 20MB RAM]
+        Traefik --> Gatus[Pod: Gatus<br/>Monitoring]
+        Scheduler --> SQLite[(SQLite WAL<br/>PersistentVolume)]
+    end
+    GHA[GitHub Actions] -->|build + push| GHCR[GHCR]
+    GHCR -.->|pull| K3s
+</div>
 
-When I decided to re-center my infrastructure on VPS, it wasn't a step backward. It was applying everything I'd learned from serverless — automated deploys, reproducible infrastructure, decoupled services — but on a foundation I could manage alone.
+Everything runs on one machine. Traefik handles TLS and routing. Each service is a pod with its own container. If a pod dies, K3s restarts it. Deploying is push to main → GitHub Actions builds images → pushes to GHCR → SSHs to server → `kubectl rollout restart`. No surprises.
 
-The catalyst was Docker. Everything I liked about the serverless model — packaging my code with its dependencies, deploying reproducibly, scaling services independently — I could do with containers on a VPS. Without the abstraction layer of a cloud provider, without the complex pricing, and with full control over my environment.
+Yes, I said K3s. Kubernetes. After writing "you don't need Kubernetes" in the previous version of this article, I ended up using it. The difference is that K3s doesn't feel like Kubernetes — it's a 50MB binary you install in 30 seconds that gives you container orchestration, health checks, rolling updates, and secret management without the ceremony of an EKS cluster. I use it to run multiple projects on a single server with isolation between them, and because if a service goes down at 3 AM, K3s brings it back up on its own.
 
-My current setup is a VPS with Docker Compose, Traefik as a reverse proxy with automatic SSL via Let's Encrypt, and each service running in its own container. Deploying is a `docker compose up -d --build` after a push to main. GitHub Actions handles CI. There's no magic, no vendor lock-in, and if tomorrow I want to move everything to another VPS provider, it's copying files and running the same command.
+## The code: same logic, different ceremony
 
-Traefik deserves special mention because it solved something that with Nginx required manual configuration: automatic routing based on Docker labels and SSL certificate renewal. Defining that `api.mydomain.com` points to the right service is a label in the `docker-compose.yml`, not a separate config file. [Traefik's documentation](https://doc.traefik.io/traefik/) is some of the best I've seen in infrastructure tooling.
+To make the point concrete, here's the same endpoint implemented for Lambda and for a regular HTTP server with Chi.
 
-## Choosing the stack: why Go and Svelte
+### AWS Lambda handler (Go)
 
-This part of the process was harder than I expected, because it involves killing sacred cows.
+```go
+package main
 
-I came from PHP and TypeScript. I knew Laravel, I knew Express, I knew Next.js. Why change something that already worked? The reason was purely practical: I wanted to run multiple microservices on a VPS without them eating up all the RAM.
+import (
+    "context"
+    "encoding/json"
+    "net/http"
 
-A Laravel service with PHP-FPM uses between 80 and 150 MB of RAM at rest. An Express/Node one between 60 and 120 MB. That's not a problem if you have a monolith. But if your architecture has 4 or 5 independent services, you're already at 400-600 MB just in runtime, not counting the database. On a 2 GB VPS, that's tight.
+    "github.com/aws/aws-lambda-go/events"
+    "github.com/aws/aws-lambda-go/lambda"
+)
 
-Go changed that equation. A compiled Go service uses between 10 and 25 MB of RAM serving real traffic. I can run 5 or 6 microservices, a database, a reverse proxy, and a monitoring service on a 2 GB VPS and still have over a gig of RAM left. For a freelancer, that means being able to host several client projects on the same machine if needed, or having enormous room to grow.
+type QuoteRequest struct {
+    ProjectTypes []string `json:"projectTypes"`
+    Contact      struct {
+        Name  string `json:"name"`
+        Email string `json:"email"`
+    } `json:"contact"`
+}
 
-But resource efficiency wasn't the only reason. Go has something I didn't find in other backend languages: time-proof readability. When I open a Go file I wrote 8 months ago, I understand what it does in minutes. There are no decorators to investigate, no magic dependency injection, no implicit middleware. The program flow is linear and explicit. You receive a request, validate, process, respond. Error handling with `if err != nil` seems verbose at first, but after a while you realize it's exactly the clarity you want when you're debugging at 11 PM.
+func handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+    var body QuoteRequest
+    if err := json.Unmarshal([]byte(req.Body), &body); err != nil {
+        return events.APIGatewayProxyResponse{
+            StatusCode: http.StatusBadRequest,
+            Body:       `{"error":"invalid JSON"}`,
+            Headers:    map[string]string{"Content-Type": "application/json"},
+        }, nil
+    }
 
-The router I use is [Chi](https://github.com/go-chi/chi), which follows Go's standard `net/http` interface. This means I'm not learning a proprietary framework — I'm using the standard library with a bit of convenience on top. If Chi stopped being maintained tomorrow, migrating to another router or even to raw `net/http` would be changing a few lines.
+    // ... identical business logic ...
 
-For the frontend, the decision was more personal. I'd been using React for years and the fatigue was real. Not fatigue with the framework itself, but with the ecosystem that changes every six months. Next.js changing its rendering model, the transition to server components, the App Router vs Pages Router debate, hydration issues... too much movement for something that should be stable.
+    return events.APIGatewayProxyResponse{
+        StatusCode: http.StatusOK,
+        Body:       `{"success":true}`,
+        Headers:    map[string]string{"Content-Type": "application/json"},
+    }, nil
+}
 
-Svelte was a breath of fresh air. A Svelte component is HTML with declarative reactivity. There's no virtual DOM, no hooks with cryptic rules, no `useEffect` with dependency arrays you're never sure are correct. Styles are scoped to the component by default — you write normal CSS and it doesn't leak to other components. And with Svelte 5, the reactivity model with runes (`$state`, `$derived`, `$effect`) is so straightforward that the code almost reads like pseudocode.
-
-Combined with [Astro](https://astro.build) as the site framework, I get the best of both worlds: static pages where I don't need interactivity (blog, landing, informational pages) and Svelte components hydrated only where they're needed (forms, dashboards, interactive elements). The result is a site that loads almost instantly because the HTML comes pre-rendered from the server, and JavaScript only loads where necessary.
-
-## The database: SQLite and when to actually scale to PostgreSQL
-
-Another decision that goes against the current: I use SQLite for most of my projects.
-
-I know it sounds odd. SQLite has a reputation as "the development database" or "the one you use for prototyping." But that reputation is outdated. SQLite in WAL mode (Write-Ahead Logging) handles concurrent reads without issue. For applications with a read-heavy, moderate-write pattern — which is exactly what most internal systems are — it performs as well or better than PostgreSQL, with the advantage that there's no database server to configure, maintain, or that can go down.
-
-The database is a file. You back it up by copying it (or with tools like [Litestream](https://litestream.io) that do continuous replication to S3). You migrate it by copying it. There's no connection pooling to configure, no database users to manage, no ports to expose.
-
-When do I scale to PostgreSQL? When I need heavy concurrent writes from multiple processes, advanced full-text search, specialized data types like indexed JSON or geospatial data, or when data volume exceeds what's reasonable for a single file. For the vast majority of small and mid-sized business projects, that point never comes.
-
-## The deploy: GitHub Actions, Docker, and nothing else
-
-My deploy pipeline is deliberately simple. Push to `main`, GitHub Actions builds the Docker images, pushes them to the registry, and the VPS pulls and restarts the services. No Kubernetes, no Terraform, no Ansible. A `docker-compose.yml` defines the entire infrastructure.
-
-Is this "correct" according to DevOps best practices? Probably not, if we were talking about a company with 20 services and a platform team. But for a freelancer with 3-6 services per project, it's exactly what I need: something I completely understand, that I can debug without documentation, and that doesn't require maintaining auxiliary infrastructure.
-
-A typical Go service Dockerfile is minimal:
-
-```dockerfile
-FROM golang:1.23-alpine AS builder
-RUN apk add --no-cache gcc musl-dev
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=1 go build -o /server .
-
-FROM alpine:3.21
-RUN apk add --no-cache ca-certificates tzdata
-COPY --from=builder /server /server
-EXPOSE 8080
-ENTRYPOINT ["/server"]
+func main() {
+    lambda.Start(handler)
+}
 ```
 
-The final image weighs between 15 and 25 MB depending on dependencies. Compare that with a Node image that easily exceeds 200 MB, or a PHP-FPM one that runs around 150 MB. The difference shows in deploy times and how many images you can keep in the registry without storage costs spiraling.
+### Chi / net/http handler (Go) — what I actually use
 
-## Conflicts I still have
+```go
+func (h *QuoteHandler) CreateQuote(w http.ResponseWriter, r *http.Request) {
+    var body QuoteRequest
+    if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+        http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
+        return
+    }
 
-I don't want to paint this as the perfect solution, because it's not. There are things that still cause friction.
+    // ... same business logic ...
 
-**Go doesn't have an ORM that fully convinces me.** GORM is popular but adds a layer of magic that goes against Go's philosophy. SQLx is more explicit but requires writing SQL by hand for everything. I ended up writing raw SQL with the standard `database/sql` library, and while it works well, I sometimes miss the productivity of Eloquent in Laravel or Prisma in TypeScript. It's a conscious tradeoff: more control and transparency in exchange for more lines of code in the data layer.
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+```
 
-**Svelte has a smaller ecosystem than React.** When you need a third-party component — a complex date picker, a rich text editor, a charting library — the options in Svelte are fewer and sometimes less mature. This is becoming less of a problem as the ecosystem grows, but it's a reality to consider.
+The business logic is identical. The difference is ceremony: the Lambda handler needs the AWS SDK, manual parsing of the API Gateway event (no `http.Request`), and constructing the response as a struct with separate `StatusCode`, `Body`, and `Headers`. The Chi handler uses Go's standard interface that hasn't changed since 2012.
 
-**Monitoring on a VPS is manual.** On AWS you have CloudWatch, X-Ray, automatic dashboards. On a VPS, if you want monitoring, you set it up yourself. Personally, I use structured logging with `slog` (Go's standard library since version 1.21) and send it to stdout for Docker to capture. It's not as sophisticated as a full APM, but for my needs it's enough. Tools like [Dozzle](https://dozzle.dev/) give you a web-based log dashboard with zero configuration, which helps a lot.
+That difference looks minor in one endpoint. Multiply it by 10 endpoints, add tests (which now need to mock the Lambda context), and the accumulated complexity is real.
 
-**Horizontal scalability has a ceiling.** If a project grows to the point of needing multiple servers, load balancing, and automatic failover, a single VPS with Docker Compose falls short. But in my experience, that point comes much later than most people think. A well-optimized 4 GB VPS with Go comfortably serves thousands of requests per second. When a project reaches that traffic level, it usually has the budget for more robust infrastructure.
+### The K8s manifest: this is how simple deploy is
 
-## Current state
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-quoter
+  namespace: joledev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-quoter
+  template:
+    spec:
+      containers:
+        - name: api-quoter
+          image: ghcr.io/joledev/joledev-api-quoter:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: RESEND_API_KEY
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+```
 
-Today my standard infrastructure for a new project looks like this: a VPS on Hetzner or DigitalOcean ($15-25 USD/month), Docker Compose for orchestration, Traefik for reverse proxy and SSL, Go backend services with Chi, Astro frontend with Svelte components, SQLite for persistence with Litestream for backups, and GitHub Actions for CI/CD.
+That's it. The container, its env vars from a K8s secret, and resource limits. Traefik handles TLS and routing by hostname and path. You write this once, apply it with `kubectl apply -f`, and forget about it.
 
-The total RAM a typical project uses with 2-3 microservices, the frontend, the database, and Traefik is around 200-300 MB. That leaves me enormous headroom on a 2 GB VPS, and the possibility of hosting more than one project per machine if the clients are small.
+## Security and scalability
 
-Do I use serverless? Yes, but for what makes sense. A webhook that receives data from an external service and processes it. A heavy cron that isn't worth keeping in a running container. Specific functions where the pay-per-invocation model genuinely saves money. But it's not the foundation of my architecture — it's a complement.
+This is the section missing from most comparisons.
 
-## What I'd tell someone who's deciding
+### Security
 
-If you're starting out as a freelancer or reconsidering your infrastructure, my advice is to resist the pressure to adopt what's trendy and focus on what lets you ship fast and maintain with confidence.
+**Serverless has security by default... in theory.** You don't manage the OS, you don't patch servers, you don't configure firewalls. But IAM's security model is so granular that a permission error is almost inevitable. An overly permissive policy (`Action: "*"`, `Resource: "*"`) is a risk. An overly restrictive one and your function can't even read from the database. And IAM error messages are useless — "Access Denied" without telling you which permission is missing.
 
-You don't need Kubernetes to serve an application with 200 users. You don't need a distributed microservices architecture on Lambda for a CRUD with reports. You don't need DynamoDB for a table with 10,000 records. But you do need to understand what happens when something breaks, and be able to fix it without consulting three different documentations.
+Secrets in Lambda go in environment variables or Secrets Manager. If you use env vars, anyone with Lambda console access sees them in plain text. If you use Secrets Manager, you pay $0.40/secret/month and add latency to every cold start from the API call.
 
-Choose the tool you understand inside and out. If that's PHP with Laravel on shared hosting, it works. If it's Node on a VPS, it works. If it's Go with Docker, it works. The technology matters less than the industry wants you to believe. What matters is that you can deliver, that you can maintain, and that your client is happy.
+**On a VPS with K3s**, security is your responsibility — but it's predictable. SSH with key-only auth (no passwords), fail2ban to block brute force, UFW to close unnecessary ports, and secrets live as `kubectl secrets` that never get committed to the repo. The attack surface is one SSH port and ports 80/443 that Traefik exposes. It's simpler to audit because there are fewer moving parts.
 
-And if after reading all this you still want to try serverless — do it. But try it on an isolated function in a real project, not on an entire system. That way you learn the model without betting your whole project on an architecture you might not need.
+Which is harder to secure correctly? Depends on scale. For a freelancer with 3 services, the VPS is simpler and more auditable. For a team of 20 with 50 Lambdas, IAM + AWS security tools makes more sense because it scales with the team.
 
-At the end of the day, the best infrastructure is the one that lets you focus on the code and your client's problems, not on the infrastructure itself.
+### Scalability
+
+**Serverless scales automatically.** You get 10,000 concurrent requests, Lambda creates 10,000 containers. Sounds perfect until your relational database can't handle 10,000 simultaneous connections. Connection pooling via RDS Proxy exists but adds another service (and another cost). And there are hard concurrency limits per region — the default is 1,000 concurrent executions. If you exceed them, your requests get rejected with 429.
+
+**On K3s**, scalability is manual but predictable. A Go pod serving 1,000 req/s uses ~50MB of RAM. If you need more, you add replicas (`replicas: 3`) or enable the HorizontalPodAutoscaler. No billing surprises and no concurrency limits blocking you.
+
+The real question: when do you need to scale beyond a single VPS? For a Go API with SQLite, the bottleneck is disk — and even then you can easily hit **5,000-10,000 requests per second** before needing to think about horizontal scaling. None of my freelance clients have ever reached even 5% of that.
+
+## The decision framework
+
+After going back and forth between both worlds, this is the heuristic I use:
+
+**Use serverless when:**
+- Traffic is genuinely unpredictable (spikes from 0 to thousands and back to 0)
+- The function is isolated and ephemeral (a webhook, a file processor, a cron)
+- Your client already has AWS infrastructure and wants to add functionality
+- The infrastructure budget is larger than the cost of your time configuring it
+
+**Use a VPS when:**
+- Traffic is predictable (internal users, business hours, <1000 req/s)
+- You need consistent latency (no cold starts)
+- You want full control over the environment and costs
+- You work alone or on a small team with no dedicated DevOps
+- You need to run multiple projects without the bill multiplying
+
+**The short answer for freelancers:** if your client can't explain to you why they need serverless, they don't. A VPS with containers and good CI/CD covers 90% of the projects you'll encounter.
+
+## What I actually use today
+
+My current stack for a new project: a Hetzner VPS with K3s, Traefik as ingress with auto TLS via cert-manager, microservices in Go with Chi, Astro frontend with Svelte islands, SQLite for persistence, and GitHub Actions that builds images, pushes them to GHCR, and does a rollout restart on the cluster.
+
+The total RAM usage of joledev.com with its 4 pods (web, api-quoter, api-scheduler, gatus) is around 120MB. On a 4GB VPS, that's nothing. I could run 10 projects like this before needing a bigger machine.
+
+Do I use serverless? For a Stripe webhook that processes payments on an e-commerce project I built, yes. For a cron that generates monthly PDF reports, also yes. But those are supplements — not the foundation. The foundation is a server I completely understand, that I can debug with `kubectl logs` at 3 AM, and that costs me less than a coffee per month per project.
+
+The best infrastructure isn't the most modern one. It's the one that lets you sleep at night.

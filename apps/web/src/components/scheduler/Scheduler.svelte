@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { toast } from '../../lib/toast.svelte';
+
   interface Props {
     lang: 'es' | 'en';
     apiUrl?: string;
@@ -38,6 +40,28 @@
   let clientAddress = $state('');
   let notes = $state('');
   let formErrors = $state<Record<string, string>>({});
+  let fieldTouched = $state<Record<string, boolean>>({});
+
+  function validateField(field: string) {
+    const errors = { ...formErrors };
+    if (field === 'name') {
+      if (!clientName.trim()) {
+        errors.name = t.required;
+      } else {
+        delete errors.name;
+      }
+    }
+    if (field === 'email') {
+      if (!clientEmail.trim()) {
+        errors.email = t.invalidEmail;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())) {
+        errors.email = t.invalidEmail;
+      } else {
+        delete errors.email;
+      }
+    }
+    formErrors = errors;
+  }
 
   // Step 5: Confirmation
   let submitting = $state(false);
@@ -212,6 +236,42 @@
     return `${hour - 12}:${m} PM`;
   }
 
+  // Convert server time (America/Tijuana) to client timezone for display
+  const SERVER_TZ = 'America/Tijuana';
+
+  function toClientTime(date: string, time: string): string {
+    if (clientTimezone === SERVER_TZ) return formatTime(time);
+    try {
+      const asUtc = new Date(`${date}T${time}:00Z`);
+      const serverLocal = new Date(asUtc.toLocaleString('en-US', { timeZone: SERVER_TZ }));
+      const offsetMs = asUtc.getTime() - serverLocal.getTime();
+      const utcMoment = new Date(asUtc.getTime() + offsetMs);
+      return utcMoment.toLocaleTimeString(lang === 'es' ? 'es-MX' : 'en-US', {
+        timeZone: clientTimezone,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch {
+      return formatTime(time);
+    }
+  }
+
+  // Re-fetch slots when timezone changes
+  let tzInitialized = false;
+  $effect(() => {
+    const _tz = clientTimezone;
+    if (!tzInitialized) {
+      tzInitialized = true;
+      return;
+    }
+    if (currentStep >= 2) {
+      selectedStartTime = '';
+      selectedEndTime = '';
+      fetchSlots();
+    }
+  });
+
   // Fetch slots for current view month
   async function fetchSlots() {
     loadingSlots = true;
@@ -228,10 +288,12 @@
       } else {
         slots = [];
         slotsError = t.apiError;
+        toast.error(slotsError);
       }
     } catch {
       slots = [];
       slotsError = t.apiError;
+      toast.error(slotsError);
     }
     loadingSlots = false;
   }
@@ -342,6 +404,7 @@
       if (res.status === 409) {
         // Could be slot taken OR active booking exists
         submitError = data.message || t.slotTaken;
+        toast.error(submitError);
         submitting = false;
         // If slot taken, go back to time selection
         if (!data.message?.includes('activa') && !data.message?.includes('active')) {
@@ -355,6 +418,7 @@
 
       if (!res.ok || !data.success) {
         submitError = data.message || t.errorGeneric;
+        toast.error(submitError);
         submitting = false;
         return;
       }
@@ -362,8 +426,10 @@
       bookingId = data.bookingId;
       submitted = true;
       currentStep = 5;
+      toast.success(t.step5Title);
     } catch {
       submitError = t.errorGeneric;
+      toast.error(submitError);
     }
     submitting = false;
   }
@@ -502,7 +568,7 @@
                   class:selected={selectedStartTime === slot.startTime}
                   onclick={() => { selectSlot(slot); currentStep = 3; }}
                 >
-                  {formatTime(slot.startTime)}
+                  {toClientTime(slot.date, slot.startTime)}
                 </button>
               {/each}
             </div>
@@ -524,7 +590,7 @@
           </div>
           <div class="summary-item">
             <span class="summary-label">{t.meetingTime}</span>
-            <span class="summary-value">{formatTime(selectedStartTime)} - {formatTime(selectedEndTime)}</span>
+            <span class="summary-value">{toClientTime(selectedDate, selectedStartTime)} - {toClientTime(selectedDate, selectedEndTime)}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">{t.timezone}</span>
@@ -543,15 +609,25 @@
       <div class="step" style="animation: slideIn 0.3s ease-out">
         <h3 class="step-title">{t.step4Title}</h3>
         <form class="contact-form" onsubmit={(e) => { e.preventDefault(); submitBooking(); }}>
-          <div class="form-field">
+          <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && clientName.trim()} class:field-invalid={fieldTouched.name && formErrors.name}>
             <label for="s-name">{t.name} *</label>
-            <input id="s-name" type="text" bind:value={clientName} required autocomplete="name" />
-            {#if formErrors.name}<span class="field-error">{formErrors.name}</span>{/if}
+            <div class="input-wrapper">
+              <input id="s-name" type="text" bind:value={clientName} required autocomplete="name" onblur={() => { fieldTouched.name = true; validateField('name'); }} />
+              {#if fieldTouched.name && !formErrors.name && clientName.trim()}
+                <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              {/if}
+            </div>
+            {#if fieldTouched.name && formErrors.name}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</span>{/if}
           </div>
-          <div class="form-field">
+          <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && clientEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email}>
             <label for="s-email">{t.email} *</label>
-            <input id="s-email" type="email" bind:value={clientEmail} required autocomplete="email" />
-            {#if formErrors.email}<span class="field-error">{formErrors.email}</span>{/if}
+            <div class="input-wrapper">
+              <input id="s-email" type="email" bind:value={clientEmail} required autocomplete="email" onblur={() => { fieldTouched.email = true; validateField('email'); }} />
+              {#if fieldTouched.email && !formErrors.email && clientEmail.trim()}
+                <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              {/if}
+            </div>
+            {#if fieldTouched.email && formErrors.email}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</span>{/if}
           </div>
           <div class="form-field">
             <label for="s-phone">{t.phone}</label>
@@ -574,7 +650,7 @@
           {#if submitError}
             <div class="error-msg">{submitError}</div>
           {/if}
-          <button type="submit" class="submit-btn" disabled={submitting}>
+          <button type="submit" class="btn-primary" style="width: 100%;" disabled={submitting}>
             {#if submitting}
               <span class="spinner"></span>
             {:else}
@@ -602,7 +678,7 @@
           </div>
           <div class="summary-item">
             <span class="summary-label">{t.meetingTime}</span>
-            <span class="summary-value">{formatTime(selectedStartTime)} - {formatTime(selectedEndTime)}</span>
+            <span class="summary-value">{toClientTime(selectedDate, selectedStartTime)} - {toClientTime(selectedDate, selectedEndTime)}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">{t.timezone}</span>
@@ -777,7 +853,9 @@
     background: none;
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
-    padding: 0.375rem;
+    padding: 0.625rem;
+    min-width: 44px;
+    min-height: 44px;
     cursor: pointer;
     color: var(--color-text-primary);
     display: flex;
@@ -1007,60 +1085,58 @@
 
   .form-field input,
   .form-field textarea {
-    padding: 0.625rem 0.875rem;
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
+    padding: 0.75rem 1rem;
+    background: var(--color-bg-elevated);
+    border: 1.5px solid var(--color-border);
     border-radius: 0.5rem;
     font-size: 0.9375rem;
+    min-height: 44px;
     color: var(--color-text-primary);
-    font-family: inherit;
-    transition: border-color 0.2s;
+    font-family: var(--font-sans);
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   .form-field input:focus,
   .form-field textarea:focus {
     outline: none;
     border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   }
 
+  .input-wrapper {
+    position: relative;
+  }
+
+  .field-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    pointer-events: none;
+  }
+  .field-icon-valid { color: var(--color-success); }
+
+  .field-valid input { border-color: var(--color-success); }
+  .field-invalid input { border-color: var(--color-error); }
+
   .field-error {
-    font-size: 0.75rem;
-    color: #ef4444;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--color-error);
+    margin-top: 0.25rem;
   }
 
   .error-msg {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
     border-radius: 0.5rem;
     padding: 0.75rem;
-    color: #ef4444;
+    color: var(--color-error);
     font-size: 0.875rem;
     text-align: center;
-  }
-
-  .submit-btn {
-    padding: 0.875rem;
-    background: var(--color-accent-primary);
-    color: #fff;
-    border: none;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .submit-btn:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-
-  .submit-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
   }
 
   .spinner {
@@ -1078,7 +1154,7 @@
   }
 
   .success-check {
-    color: #f59e0b;
+    color: var(--color-success);
     margin-bottom: 1rem;
     animation: popIn 0.4s ease-out;
     display: flex;
@@ -1095,8 +1171,8 @@
   .pending-badge {
     display: inline-block;
     padding: 0.375rem 1rem;
-    background: #fef3c7;
-    color: #92400e;
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success);
     border-radius: 2rem;
     font-size: 0.8125rem;
     font-weight: 600;

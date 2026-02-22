@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as THREE from 'three';
 
   let canvas: HTMLCanvasElement;
 
-  onMount(() => {
+  onMount(async () => {
+    const THREE = await import('three');
     const isMobile = window.innerWidth < 768;
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 

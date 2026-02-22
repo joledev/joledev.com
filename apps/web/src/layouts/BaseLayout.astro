@@ -1,7 +1,9 @@
 ---
 import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import ToastContainer from '../components/ui/ToastContainer.svelte';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 interface Props {
@@ -71,26 +73,31 @@ const alternateUrl = new URL(alternatePathname, Astro.site);
       rel="stylesheet"
     />
 
-    <!-- Prevent theme flash -->
+    <ViewTransitions />
+
+    <!-- Prevent theme flash (initial load + view transition swaps) -->
     <script is:inline>
-      (function () {
+      function applyTheme() {
         const saved = localStorage.getItem('theme');
         if (saved) {
           document.documentElement.setAttribute('data-theme', saved);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.setAttribute('data-theme', 'dark');
         }
-      })();
+      }
+      applyTheme();
+      document.addEventListener('astro:after-swap', applyTheme);
     </script>
   </head>
   <body class="min-h-screen bg-bg-primary text-text-primary">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent-primary focus:px-4 focus:py-2 focus:text-white">
       {lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}
     </a>
-    <Header />
-    <main id="main-content">
+    <Header transition:name="header" transition:animate="none" />
+    <main id="main-content" transition:animate="fade">
       <slot />
     </main>
-    <Footer />
+    <Footer transition:name="footer" transition:animate="none" />
+    <ToastContainer client:idle />
   </body>
 </html>

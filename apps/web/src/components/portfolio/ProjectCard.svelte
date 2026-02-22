@@ -56,7 +56,7 @@
   <!-- Image -->
   <div class="image-wrapper">
     {#if heroImage}
-      <img src={heroImage} alt={title} class="image" loading="lazy" />
+      <img src={heroImage} alt={title} class="image" width="640" height="400" loading="lazy" />
     {:else}
       <div class="image-placeholder">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -95,15 +95,15 @@
     border: 1px solid var(--color-border);
     background: var(--color-bg-elevated);
     overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
     text-decoration: none;
     color: inherit;
   }
 
   .card:hover {
-    border-color: var(--color-accent-light);
-    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08);
-    transform: translateY(-2px);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15);
+    transform: translateY(-4px);
   }
 
   .image-wrapper {
@@ -116,11 +116,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  .card:hover .image {
-    transform: scale(1.03);
   }
 
   .image-placeholder {
@@ -131,11 +126,6 @@
     justify-content: center;
     background: linear-gradient(135deg, var(--color-accent-subtle), var(--color-bg-secondary));
     color: var(--color-accent-primary);
-    transition: transform 0.3s ease;
-  }
-
-  .card:hover .image-placeholder {
-    transform: scale(1.03);
   }
 
   .image-overlay {
@@ -147,10 +137,7 @@
     background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
-  }
-
-  .card:hover .image-overlay {
-    opacity: 1;
+    pointer-events: none;
   }
 
   .overlay-text {
@@ -163,7 +150,7 @@
     position: absolute;
     top: 0.75rem;
     right: 0.75rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -181,7 +168,7 @@
   .card-title {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.125rem;
     color: var(--color-text-primary);
     margin-bottom: 0.75rem;
   }
@@ -196,8 +183,8 @@
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
     border-radius: 0.375rem;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent-primary);
+    background: var(--color-secondary-subtle);
+    color: var(--color-secondary-primary);
     font-weight: 500;
   }
 
