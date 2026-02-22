@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -394,5 +395,123 @@ func TestConfirmAlreadyConfirmed(t *testing.T) {
 	db.QueryRow("SELECT status FROM bookings WHERE booking_id = 'BK-2026-003'").Scan(&status)
 	if status != "confirmed" {
 		t.Errorf("Expected status to remain 'confirmed', got '%s'", status)
+	}
+}
+
+func TestCreateBooking_InvalidDateFormat(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewBookingHandler(db)
+	body, _ := json.Marshal(models.BookingRequest{
+		Date:        "15-06-2026", // wrong format
+		StartTime:   "09:00",
+		MeetingType: "videollamada",
+		ClientName:  "Test User",
+		ClientEmail: "test@example.com",
+		Lang:        "es",
+	})
+
+	req := httptest.NewRequest("POST", "/scheduler/bookings", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateBooking(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid date format, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateBooking_InvalidTimeFormat(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewBookingHandler(db)
+	body, _ := json.Marshal(models.BookingRequest{
+		Date:        "2026-06-15",
+		StartTime:   "9:00", // missing leading zero
+		MeetingType: "videollamada",
+		ClientName:  "Test User",
+		ClientEmail: "test@example.com",
+		Lang:        "es",
+	})
+
+	req := httptest.NewRequest("POST", "/scheduler/bookings", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateBooking(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid time format, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateBooking_InvalidMeetingType(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewBookingHandler(db)
+	body, _ := json.Marshal(models.BookingRequest{
+		Date:        "2026-06-15",
+		StartTime:   "09:00",
+		MeetingType: "phone", // invalid
+		ClientName:  "Test User",
+		ClientEmail: "test@example.com",
+		Lang:        "es",
+	})
+
+	req := httptest.NewRequest("POST", "/scheduler/bookings", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateBooking(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid meeting type, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateBooking_NameTooLong(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewBookingHandler(db)
+	body, _ := json.Marshal(models.BookingRequest{
+		Date:        "2026-06-15",
+		StartTime:   "09:00",
+		MeetingType: "videollamada",
+		ClientName:  strings.Repeat("x", 201),
+		ClientEmail: "test@example.com",
+		Lang:        "es",
+	})
+
+	req := httptest.NewRequest("POST", "/scheduler/bookings", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "10.0.0.99")
+	w := httptest.NewRecorder()
+
+	handler.CreateBooking(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for name too long, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGetAvailableSlots_InvalidDateFormat(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewSlotHandler(db)
+	req := httptest.NewRequest("GET", "/scheduler/slots?from=invalid&to=2026-06-15", nil)
+	w := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	r.Get("/scheduler/slots", handler.GetAvailableSlots)
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid date format, got %d: %s", w.Code, w.Body.String())
 	}
 }

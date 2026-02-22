@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/joledev/api-quoter/models"
@@ -123,5 +124,135 @@ func TestCreateQuote_MissingEmail(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateQuote_MissingName(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewQuoteHandler(db)
+	req := models.QuoteRequest{
+		ProjectTypes: []string{"web"},
+		Features:     []string{"auth"},
+		BusinessSize: "small",
+		CurrentState: "fromScratch",
+		Timeline:     "1-3months",
+		Currency:     "MXN",
+		EstimatedMin: 25000,
+		EstimatedMax: 40000,
+		Contact: models.QuoteContact{
+			Name:  "",
+			Email: "test@example.com",
+		},
+	}
+
+	body, _ := json.Marshal(req)
+	httpReq := httptest.NewRequest(http.MethodPost, "/quotes", bytes.NewBuffer(body))
+	httpReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateQuote(w, httpReq)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing name, got %d", w.Code)
+	}
+}
+
+func TestCreateQuote_EmptyProjectTypes(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewQuoteHandler(db)
+	req := models.QuoteRequest{
+		ProjectTypes: []string{},
+		Features:     []string{"auth"},
+		BusinessSize: "small",
+		CurrentState: "fromScratch",
+		Timeline:     "1-3months",
+		Currency:     "MXN",
+		EstimatedMin: 25000,
+		EstimatedMax: 40000,
+		Contact: models.QuoteContact{
+			Name:  "Test User",
+			Email: "test@example.com",
+		},
+	}
+
+	body, _ := json.Marshal(req)
+	httpReq := httptest.NewRequest(http.MethodPost, "/quotes", bytes.NewBuffer(body))
+	httpReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateQuote(w, httpReq)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty project types, got %d", w.Code)
+	}
+}
+
+func TestCreateQuote_NotesTooLong(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewQuoteHandler(db)
+	req := models.QuoteRequest{
+		ProjectTypes: []string{"web"},
+		Features:     []string{"auth"},
+		BusinessSize: "small",
+		CurrentState: "fromScratch",
+		Timeline:     "1-3months",
+		Currency:     "MXN",
+		EstimatedMin: 25000,
+		EstimatedMax: 40000,
+		Contact: models.QuoteContact{
+			Name:  "Test User",
+			Email: "test@example.com",
+			Notes: strings.Repeat("x", 2001),
+		},
+	}
+
+	body, _ := json.Marshal(req)
+	httpReq := httptest.NewRequest(http.MethodPost, "/quotes", bytes.NewBuffer(body))
+	httpReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.CreateQuote(w, httpReq)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for notes too long, got %d", w.Code)
+	}
+}
+
+func TestCreateQuote_NameTooLong(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewQuoteHandler(db)
+	req := models.QuoteRequest{
+		ProjectTypes: []string{"web"},
+		Features:     []string{"auth"},
+		BusinessSize: "small",
+		CurrentState: "fromScratch",
+		Timeline:     "1-3months",
+		Currency:     "MXN",
+		EstimatedMin: 25000,
+		EstimatedMax: 40000,
+		Contact: models.QuoteContact{
+			Name:  strings.Repeat("x", 201),
+			Email: "test@example.com",
+		},
+	}
+
+	body, _ := json.Marshal(req)
+	httpReq := httptest.NewRequest(http.MethodPost, "/quotes", bytes.NewBuffer(body))
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("X-Forwarded-For", "10.0.0.99")
+	w := httptest.NewRecorder()
+
+	handler.CreateQuote(w, httpReq)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for name too long, got %d", w.Code)
 	}
 }
