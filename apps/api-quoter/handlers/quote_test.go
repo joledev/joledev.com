@@ -30,6 +30,8 @@ func setupTestDB(t *testing.T) *sql.DB {
 		currency TEXT NOT NULL,
 		estimated_min INTEGER NOT NULL,
 		estimated_max INTEGER NOT NULL,
+		payment_plan TEXT DEFAULT '',
+		include_source_code INTEGER DEFAULT 0,
 		contact_name TEXT NOT NULL,
 		contact_email TEXT NOT NULL,
 		contact_phone TEXT,

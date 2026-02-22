@@ -17,6 +17,8 @@ import (
 )
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+var dateRegex = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+var timeRegex = regexp.MustCompile(`^\d{2}:\d{2}$`)
 
 // Rate limiter: max 10 requests per IP per hour
 type rateLimiter struct {
@@ -73,18 +75,21 @@ func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 64*1024) // 64KB max
+
 	var req models.BookingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"success":false,"message":"Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
 
-	// Validate
-	if strings.TrimSpace(req.ClientName) == "" {
-		http.Error(w, `{"success":false,"message":"Name is required"}`, http.StatusBadRequest)
+	// Validate required fields
+	clientName := strings.TrimSpace(req.ClientName)
+	if clientName == "" || len(clientName) > 200 {
+		http.Error(w, `{"success":false,"message":"Name is required (max 200 chars)"}`, http.StatusBadRequest)
 		return
 	}
-	if !emailRegex.MatchString(strings.TrimSpace(req.ClientEmail)) {
+	if !emailRegex.MatchString(strings.TrimSpace(req.ClientEmail)) || len(req.ClientEmail) > 254 {
 		http.Error(w, `{"success":false,"message":"Valid email is required"}`, http.StatusBadRequest)
 		return
 	}
@@ -92,11 +97,19 @@ func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"success":false,"message":"meetingType must be 'presencial' or 'videollamada'"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Date == "" || req.StartTime == "" {
-		http.Error(w, `{"success":false,"message":"date and startTime are required"}`, http.StatusBadRequest)
+	if !dateRegex.MatchString(req.Date) {
+		http.Error(w, `{"success":false,"message":"date must be YYYY-MM-DD format"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Lang == "" {
+	if !timeRegex.MatchString(req.StartTime) {
+		http.Error(w, `{"success":false,"message":"startTime must be HH:MM format"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.ClientPhone) > 30 || len(req.ClientCompany) > 200 || len(req.ClientAddress) > 500 || len(req.Notes) > 2000 {
+		http.Error(w, `{"success":false,"message":"Field too long"}`, http.StatusBadRequest)
+		return
+	}
+	if req.Lang != "es" && req.Lang != "en" {
 		req.Lang = "es"
 	}
 
@@ -369,8 +382,8 @@ func (h *BookingHandler) GetAdminBookings(w http.ResponseWriter, r *http.Request
 	from := r.URL.Query().Get("from")
 	to := r.URL.Query().Get("to")
 
-	if from == "" || to == "" {
-		http.Error(w, `{"success":false,"message":"from and to query params required"}`, http.StatusBadRequest)
+	if !dateRegex.MatchString(from) || !dateRegex.MatchString(to) {
+		http.Error(w, `{"success":false,"message":"from and to must be YYYY-MM-DD format"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -406,6 +419,8 @@ func (h *BookingHandler) GetAdminBookings(w http.ResponseWriter, r *http.Request
 // CancelBooking cancels a booking (admin)
 func (h *BookingHandler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
+
+	r.Body = http.MaxBytesReader(w, r.Body, 4*1024) // 4KB max
 
 	var status struct {
 		Status string `json:"status"`

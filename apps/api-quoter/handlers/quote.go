@@ -68,23 +68,31 @@ func (h *QuoteHandler) CreateQuote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 64*1024) // 64KB max
+
 	var req models.QuoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"success":false,"message":"Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
 
-	// Validate
-	if strings.TrimSpace(req.Contact.Name) == "" {
-		http.Error(w, `{"success":false,"message":"Name is required"}`, http.StatusBadRequest)
+	// Validate required fields
+	name := strings.TrimSpace(req.Contact.Name)
+	email := strings.TrimSpace(req.Contact.Email)
+	if name == "" || len(name) > 200 {
+		http.Error(w, `{"success":false,"message":"Name is required (max 200 chars)"}`, http.StatusBadRequest)
 		return
 	}
-	if !emailRegex.MatchString(strings.TrimSpace(req.Contact.Email)) {
+	if !emailRegex.MatchString(email) || len(email) > 254 {
 		http.Error(w, `{"success":false,"message":"Valid email is required"}`, http.StatusBadRequest)
 		return
 	}
-	if len(req.ProjectTypes) == 0 {
+	if len(req.ProjectTypes) == 0 || len(req.ProjectTypes) > 20 {
 		http.Error(w, `{"success":false,"message":"At least one project type is required"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.Contact.Phone) > 30 || len(req.Contact.Company) > 200 || len(req.Contact.Notes) > 2000 {
+		http.Error(w, `{"success":false,"message":"Field too long"}`, http.StatusBadRequest)
 		return
 	}
 
