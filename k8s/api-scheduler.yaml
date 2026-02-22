@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scheduler-data
+  namespace: joledev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-scheduler
+  namespace: joledev
+  labels:
+    app: api-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-scheduler
+  template:
+    metadata:
+      labels:
+        app: api-scheduler
+    spec:
+      containers:
+        - name: api-scheduler
+          image: ghcr.io/joledev/joledev-api-scheduler:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          env:
+            - name: PORT
+              value: "8082"
+            - name: DB_PATH
+              value: "/data/scheduler.db"
+            - name: API_BASE_URL
+              value: "https://api.joledev.com"
+            - name: CORS_ORIGIN
+              value: "https://joledev.com"
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: RESEND_API_KEY
+            - name: CONTACT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: CONTACT_EMAIL
+            - name: SCHEDULER_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: SCHEDULER_ADMIN_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /scheduler/health
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /scheduler/health
+              port: 8082
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: scheduler-data
+      imagePullSecrets:
+        - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-scheduler
+  namespace: joledev
+spec:
+  selector:
+    app: api-scheduler
+  ports:
+    - port: 8082
+      targetPort: 8082

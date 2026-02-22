@@ -1,0 +1,68 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: joledev-ingress
+  namespace: joledev
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    # Main website
+    - host: joledev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+    # API — quoter
+    - host: api.joledev.com
+      http:
+        paths:
+          - path: /quotes
+            pathType: Prefix
+            backend:
+              service:
+                name: api-quoter
+                port:
+                  number: 8081
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: api-quoter
+                port:
+                  number: 8081
+          # API — scheduler
+          - path: /scheduler
+            pathType: Prefix
+            backend:
+              service:
+                name: api-scheduler
+                port:
+                  number: 8082
+    # Status page
+    - host: status.joledev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gatus
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - joledev.com
+      secretName: joledev-tls
+    - hosts:
+        - api.joledev.com
+      secretName: joledev-api-tls
+    - hosts:
+        - status.joledev.com
+      secretName: joledev-status-tls

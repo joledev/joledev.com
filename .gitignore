@@ -33,6 +33,9 @@ apps/api-scheduler/bin/
 .DS_Store
 Thumbs.db
 
+# Kubernetes secrets (real values)
+k8s/secrets.yaml
+
 # IDE
 .vscode/
 .idea/

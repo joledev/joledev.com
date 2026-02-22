@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Blog:** Markdown/MDX via Astro Content Collections
 - **Email:** Resend API
 - **i18n:** Astro i18n routing (es primary, en secondary)
-- **Deploy:** GitHub Actions → Docker → VPS with Traefik (auto SSL)
+- **Deploy:** GitHub Actions → GHCR → K3s (Traefik ingress + cert-manager TLS)
 - **Monitoring:** Gatus (status page at status.joledev.com)
 
 ## Build & Development Commands
@@ -70,11 +70,21 @@ The scheduler computes availability on-the-fly (no manual slot creation):
 - **Database:** Single `bookings` table with `date`, `start_time`, `end_time`, `confirm_token`, `reject_token`, `status`
 - **Important:** Nullable columns (client_phone, client_company, client_address, notes) use `COALESCE(column, '')` in SELECT queries to avoid Go scan errors
 
-### VPS Routing (Traefik):
-- `joledev.com` → Nginx serving Astro static files
-- `api.joledev.com/quotes` → api-quoter
-- `api.joledev.com/scheduler` → api-scheduler
-- `status.joledev.com` → Gatus dashboard
+### Production (K3s on VPS `69.62.68.130`):
+- **Orchestrator:** K3s (lightweight Kubernetes) with Traefik ingress controller
+- **TLS:** cert-manager with `letsencrypt-prod` ClusterIssuer
+- **Registry:** `ghcr.io/joledev/` (joledev-web, joledev-api-quoter, joledev-api-scheduler)
+- **Namespace:** `joledev`
+- **Storage:** `local-path` StorageClass for SQLite PVC (api-scheduler)
+- **Manifests:** `k8s/` directory (namespace, deployments, services, ingress, gatus configmap)
+- **Secrets:** `joledev-secrets` (RESEND_API_KEY, CONTACT_EMAIL, SCHEDULER_ADMIN_PASSWORD) + `ghcr-secret`
+
+### Routing (Traefik Ingress):
+- `joledev.com` → web (nginx serving Astro static files)
+- `api.joledev.com/quotes` → api-quoter:8081
+- `api.joledev.com/scheduler` → api-scheduler:8082
+- `api.joledev.com/health` → api-quoter:8081
+- `status.joledev.com` → gatus:8080
 
 ### Frontend Key Directories (`apps/web/src/`):
 - `components/quoter/` — Multi-step quoter (7 steps: project type → features → business size → current state → timeline → currency → result + contact form)
@@ -98,10 +108,11 @@ See `.env.example`. Key vars:
 ## CI/CD Pipeline
 
 - **CI (`ci.yml`):** Runs on PRs and pushes to non-main branches. Builds Astro frontend, builds Go APIs (CGO_ENABLED=1), runs Go tests.
-- **Deploy (`deploy.yml`):** Runs on push to `main`. Runs full CI first, then SSHes into VPS and executes `scripts/deploy.sh`.
-- **Deploy script (`scripts/deploy.sh`):** Pulls latest code, builds Astro via Docker container, rebuilds API Docker images, restarts all services.
+- **Deploy (`deploy.yml`):** Runs on push to `main`. Three stages: CI → build & push images to GHCR → SSH to VPS and `kubectl rollout restart`.
+- **Manual deploy (`scripts/deploy.sh`):** Restarts all K3s deployments in the `joledev` namespace.
 - **Branch strategy:** Single `main` branch → production (joledev.com). No staging environment.
 - **Required GitHub Secrets:** `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_SSH_KEY`
+- **GHCR auth:** Deploy workflow uses `GITHUB_TOKEN` (automatic) with `packages: write` permission.
 
 ## Security
 
@@ -141,7 +152,7 @@ CGO_ENABLED=1 go test ./... -v
 
 ## Design System
 
-- **Palette:** Blue primary (#2563EB), light blue (#60A5FA), with light/dark theme via CSS custom properties and `[data-theme="dark"]`
+- **Palette:** Blue primary (#2563EB), teal secondary (#0D9488), with light/dark theme via CSS custom properties and `[data-theme="dark"]`. Blue = action/CTA, Teal = taxonomy/information.
 - **Typography:** Satoshi (headings), DM Sans Variable (body), JetBrains Mono Variable (code)
 - **Effects:** Glass morphism on cards/quoter, Three.js icosahedron + particles in hero
 - **Tone:** Casual-technical, creative, minimalist
@@ -154,12 +165,18 @@ CGO_ENABLED=1 go test ./... -v
 - `llms.txt` at site root for AI discoverability
 - Target keywords: "desarrollador web ensenada", "programador baja california", "sistemas administrativos ensenada"
 
-## Docker Notes
+## Docker Notes (Local Development Only)
 
+- `docker-compose.yml` + `docker-compose.dev.yml` are for local development only
 - Dev mode disables Traefik/Nginx/Gatus, exposes API ports directly (8081, 8082)
 - CORS origin defaults to `http://localhost:4321` in dev
 - Alpine runtime images need `tzdata` package for timezone support (America/Tijuana)
 - SQLite data persisted via Docker volume `sqlite-data:/data`
+- Production uses K3s — see `k8s/` directory
+
+## Content TODOs
+
+- **About section photo:** Replace the placeholder SVG illustration in `components/about/About.astro` with real photos of Joel (speaking at AWS User Group Ensenada, GDG Tijuana, or similar tech events). The current SVG is a generic silhouette and weakens credibility.
 
 ## Reference
 

@@ -1,3 +1,4 @@
+# LOCAL DEVELOPMENT ONLY — Production uses K3s (see k8s/ directory)
 services:
   traefik:
     image: traefik:v3.2
