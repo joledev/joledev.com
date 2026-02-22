@@ -7,6 +7,10 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+
+ARG PUBLIC_API_URL=https://api.joledev.com
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+
 RUN pnpm build
 
 FROM nginx:alpine
