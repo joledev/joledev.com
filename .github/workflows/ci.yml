@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: apps/web
+
+      - name: Build Astro
+        run: pnpm build
+        working-directory: apps/web
+
+  build-and-test-apis:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api: [api-quoter, api-scheduler]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: apps/${{ matrix.api }}/go.sum
+
+      - name: Install CGO dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc
+
+      - name: Build
+        run: CGO_ENABLED=1 go build ./...
+        working-directory: apps/${{ matrix.api }}
+
+      - name: Test
+        run: CGO_ENABLED=1 go test ./...
+        working-directory: apps/${{ matrix.api }}
