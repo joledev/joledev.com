@@ -95,6 +95,38 @@ See `.env.example`. Key vars:
 - `DOMAIN` — Used by Traefik for routing rules
 - `CONTACT_EMAIL` — Recipient for quoter and scheduler notifications
 
+## CI/CD Pipeline
+
+- **CI (`ci.yml`):** Runs on PRs and pushes to non-main branches. Builds Astro frontend, builds Go APIs (CGO_ENABLED=1), runs Go tests.
+- **Deploy (`deploy.yml`):** Runs on push to `main`. Runs full CI first, then SSHes into VPS and executes `scripts/deploy.sh`.
+- **Deploy script (`scripts/deploy.sh`):** Pulls latest code, builds Astro via Docker container, rebuilds API Docker images, restarts all services.
+- **Branch strategy:** Single `main` branch → production (joledev.com). No staging environment.
+- **Required GitHub Secrets:** `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_SSH_KEY`
+
+## Security
+
+- **Security headers:** Both APIs set `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+- **Rate limiting:** In-memory per-IP rate limiter on all public endpoints (quoter: 5/hr, scheduler bookings: 10/hr, slots: 60/hr)
+- **Body size limits:** 64KB max on submissions, 4KB on admin actions
+- **Input validation:** Email format regex, field length limits (name: 200, email: 254, phone: 30, company: 200, address: 500, notes: 2000), date (YYYY-MM-DD) and time (HH:MM) format validation
+- **Admin auth:** Basic Auth with `subtle.ConstantTimeCompare` (timing-safe)
+- **CORS:** Configurable via `CORS_ORIGIN` env var, defaults to `https://joledev.com`
+- **Never commit:** `.env` files, API keys, credentials. Only `.env.example` with placeholders.
+
+## Testing
+
+```bash
+# Run all tests (from each API directory)
+CGO_ENABLED=1 go test ./...
+
+# Verbose output
+CGO_ENABLED=1 go test ./... -v
+```
+
+- **Quoter tests (6):** Valid request, missing email/name, empty project types, field length validation
+- **Scheduler handler tests (15):** Booking CRUD, confirm/reject tokens, duplicate email, buffer enforcement, date/time format validation, meeting type validation, field length validation, slots date format
+- **Scheduler service tests (5):** timeToMinutes/minutesToTime, weekday-only slots, slot count, 2h buffer blocking
+
 ## Code Conventions
 
 - TypeScript strict mode in frontend
@@ -131,5 +163,4 @@ See `.env.example`. Key vars:
 
 ## Reference
 
-- Full project specification: `instrucciones.md`
 - Pending tasks: `TODO.md`
