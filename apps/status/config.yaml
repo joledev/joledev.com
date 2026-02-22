@@ -1,0 +1,38 @@
+web:
+  port: 8080
+
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+endpoints:
+  - name: "JoleDev Website"
+    group: "Frontend"
+    url: "https://joledev.com"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+
+  - name: "JoleDev API (Quoter)"
+    group: "APIs"
+    url: "https://api.joledev.com/quotes/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 1000"
+
+  - name: "JoleDev API (Scheduler)"
+    group: "APIs"
+    url: "https://api.joledev.com/scheduler/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 1000"
+
+  - name: "Status Page"
+    group: "Infrastructure"
+    url: "https://status.joledev.com"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"

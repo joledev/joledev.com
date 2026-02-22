@@ -1,0 +1,92 @@
+---
+import { getLangFromUrl } from '../../i18n/utils';
+
+interface Props {
+  type: 'website' | 'localBusiness' | 'service' | 'blogPosting';
+  data?: Record<string, any>;
+}
+
+const { type, data = {} } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+
+function buildSchema() {
+  switch (type) {
+    case 'website':
+      return {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            name: 'JoleDev',
+            url: 'https://joledev.com',
+            description: lang === 'es'
+              ? 'Desarrollo tecnológico a la medida de tu negocio'
+              : 'Technology development tailored to your business',
+            inLanguage: ['es', 'en'],
+          },
+          {
+            '@type': 'LocalBusiness',
+            name: 'JoleDev - Joel López Verdugo',
+            description: lang === 'es'
+              ? 'Desarrollo de software, páginas web y sistemas administrativos para empresas de cualquier tamaño'
+              : 'Software development, websites and management systems for businesses of any size',
+            url: 'https://joledev.com',
+            email: 'joel@joledev.com',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: 'Ensenada',
+              addressRegion: 'Baja California',
+              addressCountry: 'MX',
+            },
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: 31.8667,
+              longitude: -116.5964,
+            },
+            priceRange: '$',
+            openingHoursSpecification: {
+              '@type': 'OpeningHoursSpecification',
+              dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              opens: '09:00',
+              closes: '18:00',
+            },
+          },
+          {
+            '@type': 'Person',
+            name: 'Joel Ernesto López Verdugo',
+            jobTitle: 'Full Stack Developer & Software Architect',
+            url: 'https://joledev.com',
+            knowsAbout: ['Web Development', 'Software Architecture', 'PHP', 'TypeScript', 'Go', 'Flutter', 'Docker', 'AWS'],
+          },
+        ],
+      };
+
+    case 'service':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        provider: { '@type': 'LocalBusiness', name: 'JoleDev' },
+        serviceType: 'Software Development',
+        areaServed: { '@type': 'Country', name: 'Mexico' },
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: lang === 'es' ? 'Servicios de Desarrollo' : 'Development Services',
+          itemListElement: [
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: lang === 'es' ? 'Desarrollo de Páginas Web' : 'Website Development' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: lang === 'es' ? 'Sistemas Administrativos' : 'Management Systems' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: lang === 'es' ? 'Integraciones con IA' : 'AI Integrations' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: lang === 'es' ? 'Aplicaciones Móviles' : 'Mobile Apps' } },
+            { '@type': 'Offer', itemOffered: { '@type': 'Service', name: lang === 'es' ? 'Tiendas en Línea' : 'Online Stores' } },
+          ],
+        },
+      };
+
+    default:
+      return data;
+  }
+}
+
+const schema = buildSchema();
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

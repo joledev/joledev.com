@@ -1,0 +1,107 @@
+---
+import HeroScene from './HeroScene.svelte';
+import TextReveal from '../ui/TextReveal.svelte';
+import MagneticButton from '../ui/MagneticButton.svelte';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const quotePath = lang === 'es' ? '/es/cotizar/' : '/en/quote/';
+const projectsAnchor = lang === 'es' ? '#proyectos' : '#projects';
+---
+
+<section id="hero" class="relative min-h-[90vh] flex items-center overflow-hidden">
+  <!-- Three.js Background -->
+  <div class="absolute inset-0">
+    <HeroScene client:visible />
+  </div>
+
+  <!-- Content -->
+  <div class="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32 lg:px-8">
+    <TextReveal
+      client:visible
+      text="JoleDev"
+      tag="p"
+      effect="clipReveal"
+      mode="letters"
+      delay={0}
+      duration={800}
+      class="font-display text-sm font-semibold uppercase tracking-widest text-accent-primary sm:text-base"
+    />
+
+    <div class="mt-4">
+      <TextReveal
+        client:visible
+        text={t.hero.titleLine1}
+        tag="h1"
+        effect="wave"
+        mode="words"
+        delay={200}
+        duration={800}
+        class="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl"
+      />
+    </div>
+    <div>
+      <TextReveal
+        client:visible
+        text={t.hero.titleLine2}
+        tag="span"
+        effect="wave"
+        mode="words"
+        delay={400}
+        duration={800}
+        class="font-display text-4xl font-bold leading-tight tracking-tight text-accent-primary sm:text-5xl lg:text-6xl"
+      />
+    </div>
+
+    <div class="mx-auto mt-6 max-w-2xl">
+      <TextReveal
+        client:visible
+        text={t.hero.subtitle}
+        tag="p"
+        effect="fadeUp"
+        mode="words"
+        delay={600}
+        staggerDelay={30}
+        duration={600}
+        class="text-base text-text-secondary sm:text-lg lg:text-xl"
+      />
+    </div>
+
+    <div class="hero-ctas mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+      <MagneticButton client:visible>
+        <a
+          href={quotePath}
+          class="inline-flex items-center gap-2 rounded-lg bg-accent-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent-primary/25 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-primary/30 sm:text-base"
+        >
+          {t.hero.ctaPrimary}
+        </a>
+      </MagneticButton>
+      <MagneticButton client:visible>
+        <a
+          href={projectsAnchor}
+          class="inline-flex items-center gap-2 rounded-lg border border-accent-primary px-8 py-3.5 text-sm font-semibold text-accent-primary transition-all duration-200 hover:bg-accent-subtle sm:text-base"
+        >
+          {t.hero.ctaSecondary}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </a>
+      </MagneticButton>
+    </div>
+  </div>
+
+  <!-- Bottom gradient fade into next section -->
+  <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-bg-primary to-transparent"></div>
+</section>
+
+<style>
+  .hero-ctas {
+    opacity: 0;
+    animation: heroCTAFade 0.6s ease-out 1s forwards;
+  }
+
+  @keyframes heroCTAFade {
+    to {
+      opacity: 1;
+    }
+  }
+</style>

@@ -1,0 +1,395 @@
+---
+/**
+ * Infinite scrolling tech carousel with official brand icons (Simple Icons CDN).
+ * JS-driven animation with pause/play toggle and drag-to-scroll.
+ */
+
+const SI = 'https://cdn.simpleicons.org';
+
+interface TechItem {
+  name: string;
+  slug?: string;            // Simple Icons slug
+  svg?: string;             // Inline SVG fallback
+  darkInvert?: boolean;     // true if icon is near-black and needs inversion in dark mode
+}
+
+const techs: TechItem[] = [
+  // ── Languages ──
+  { name: 'TypeScript', slug: 'typescript' },
+  { name: 'JavaScript', slug: 'javascript' },
+  { name: 'Go', slug: 'go' },
+  { name: 'PHP', slug: 'php' },
+  { name: 'Python', slug: 'python' },
+  { name: 'HTML5', slug: 'html5' },
+  { name: 'CSS3', slug: 'css3' },
+  { name: 'Dart', slug: 'dart' },
+
+  // ── Frameworks & Libraries ──
+  { name: 'Svelte', slug: 'svelte' },
+  { name: 'React', slug: 'react' },
+  { name: 'Astro', slug: 'astro' },
+  { name: 'Tailwind CSS', slug: 'tailwindcss' },
+  { name: 'Next.js', slug: 'nextdotjs', darkInvert: true },
+  { name: 'Three.js', slug: 'threedotjs', darkInvert: true },
+  { name: 'Flutter', slug: 'flutter' },
+  { name: 'React Native', slug: 'react' },
+  { name: 'Laravel', slug: 'laravel' },
+  { name: 'Node.js', slug: 'nodedotjs' },
+  { name: 'Chi (Go)', slug: 'go' },
+
+  // ── Databases ──
+  { name: 'PostgreSQL', slug: 'postgresql' },
+  { name: 'MySQL', slug: 'mysql' },
+  { name: 'SQLite', slug: 'sqlite', darkInvert: true },
+  { name: 'Redis', slug: 'redis' },
+
+  // ── Cloud & DevOps ──
+  { name: 'AWS', slug: 'amazonwebservices', darkInvert: true },
+  { name: 'Docker', slug: 'docker' },
+  { name: 'Linux', slug: 'linux' },
+  { name: 'Terraform', slug: 'terraform' },
+  { name: 'GitHub Actions', slug: 'githubactions' },
+  { name: 'Nginx', slug: 'nginx' },
+  { name: 'Traefik', slug: 'traefikproxy' },
+
+  // ── APIs & Services ──
+  { name: 'Stripe', slug: 'stripe' },
+  { name: 'PayPal', slug: 'paypal' },
+  { name: 'Twilio', slug: 'twilio' },
+  { name: 'Resend', slug: 'resend', darkInvert: true },
+  { name: 'WhatsApp', slug: 'whatsapp' },
+  { name: 'OpenAI', slug: 'openai', darkInvert: true },
+  { name: 'Google Calendar', slug: 'googlecalendar' },
+  { name: 'SAT / CFDI', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
+  { name: 'Envia.com', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+  { name: 'Uber Direct', slug: 'uber', darkInvert: true },
+
+  // ── Tools ──
+  { name: 'Git', slug: 'git' },
+  { name: 'VS Code', slug: 'visualstudiocode' },
+  { name: 'Figma', slug: 'figma' },
+  { name: 'Postman', slug: 'postman' },
+  { name: 'Litestream', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
+  { name: 'Gatus', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+];
+
+const mid = Math.ceil(techs.length / 2);
+const row1 = techs.slice(0, mid);
+const row2 = techs.slice(mid);
+---
+
+<div class="carousel-wrapper">
+  <button class="carousel-pause" aria-label="Pause / Play" data-pause-btn>
+    <svg class="icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16" rx="1"/>
+      <rect x="14" y="4" width="4" height="16" rx="1"/>
+    </svg>
+    <svg class="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="6,4 20,12 6,20"/>
+    </svg>
+  </button>
+
+  <div class="tech-carousel" data-carousel>
+    <!-- Row 1 -->
+    <div class="carousel-track">
+      <div class="carousel-items" data-row="0">
+        {row1.map(t => (
+          <div class="tech-pill">
+            {t.slug ? (
+              <img
+                src={`${SI}/${t.slug}`}
+                alt=""
+                width="20"
+                height="20"
+                class:list={['tech-img', { 'dark-invert': t.darkInvert }]}
+                decoding="async"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              />
+            ) : t.svg ? (
+              <span class="tech-icon-svg" set:html={t.svg} />
+            ) : null}
+            <span class="tech-name">{t.name}</span>
+          </div>
+        ))}
+        {/* Duplicate for seamless loop */}
+        {row1.map(t => (
+          <div class="tech-pill" aria-hidden="true">
+            {t.slug ? (
+              <img
+                src={`${SI}/${t.slug}`}
+                alt=""
+                width="20"
+                height="20"
+                class:list={['tech-img', { 'dark-invert': t.darkInvert }]}
+                decoding="async"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              />
+            ) : t.svg ? (
+              <span class="tech-icon-svg" set:html={t.svg} />
+            ) : null}
+            <span class="tech-name">{t.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="carousel-track">
+      <div class="carousel-items" data-row="1">
+        {row2.map(t => (
+          <div class="tech-pill">
+            {t.slug ? (
+              <img
+                src={`${SI}/${t.slug}`}
+                alt=""
+                width="20"
+                height="20"
+                class:list={['tech-img', { 'dark-invert': t.darkInvert }]}
+                decoding="async"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              />
+            ) : t.svg ? (
+              <span class="tech-icon-svg" set:html={t.svg} />
+            ) : null}
+            <span class="tech-name">{t.name}</span>
+          </div>
+        ))}
+        {row2.map(t => (
+          <div class="tech-pill" aria-hidden="true">
+            {t.slug ? (
+              <img
+                src={`${SI}/${t.slug}`}
+                alt=""
+                width="20"
+                height="20"
+                class:list={['tech-img', { 'dark-invert': t.darkInvert }]}
+                decoding="async"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              />
+            ) : t.svg ? (
+              <span class="tech-icon-svg" set:html={t.svg} />
+            ) : null}
+            <span class="tech-name">{t.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .carousel-wrapper {
+    position: relative;
+  }
+
+  .tech-carousel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  }
+
+  .carousel-track {
+    overflow: hidden;
+  }
+
+  .carousel-items {
+    display: flex;
+    gap: 0.75rem;
+    width: max-content;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .carousel-items:active {
+    cursor: grabbing;
+  }
+
+  .tech-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-glass);
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    pointer-events: none; /* let drag events pass through to .carousel-items */
+  }
+
+  .tech-img {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  :global([data-theme="dark"]) .dark-invert {
+    filter: brightness(0) invert(1);
+  }
+
+  .tech-icon-svg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .tech-icon-svg :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tech-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  /* Pause / Play button */
+  .carousel-pause {
+    position: absolute;
+    top: -0.25rem;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-glass);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: border-color 0.2s, color 0.2s;
+    transform: translateY(-100%);
+  }
+
+  .carousel-pause:hover {
+    border-color: var(--color-accent-light);
+    color: var(--color-accent-primary);
+  }
+
+  .carousel-pause .icon-play {
+    display: none;
+  }
+
+  .carousel-pause.is-paused .icon-pause {
+    display: none;
+  }
+
+  .carousel-pause.is-paused .icon-play {
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-items {
+      cursor: default;
+    }
+  }
+</style>
+
+<script>
+  const carousel = document.querySelector('[data-carousel]') as HTMLElement | null;
+  const pauseBtn = document.querySelector('[data-pause-btn]') as HTMLButtonElement | null;
+
+  if (carousel) {
+    const rows = Array.from(carousel.querySelectorAll('.carousel-items')) as HTMLElement[];
+    let paused = false;
+    const positions: number[] = [0, 0];
+    const speed = 0.5; // px per frame
+
+    // Respect reduced motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      paused = true;
+      pauseBtn?.classList.add('is-paused');
+    }
+
+    // Pause / Play toggle
+    function togglePause() {
+      paused = !paused;
+      pauseBtn?.classList.toggle('is-paused', paused);
+    }
+
+    pauseBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePause();
+    });
+
+    // Drag handling
+    let dragging = false;
+    let dragIdx = -1;
+    let dragStartX = 0;
+    let dragStartPos = 0;
+
+    rows.forEach((row, i) => {
+      row.addEventListener('pointerdown', (e: PointerEvent) => {
+        dragging = true;
+        dragIdx = i;
+        dragStartX = e.clientX;
+        dragStartPos = positions[i];
+        row.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      row.addEventListener('pointermove', (e: PointerEvent) => {
+        if (!dragging || dragIdx !== i) return;
+        const dx = e.clientX - dragStartX;
+        const half = row.scrollWidth / 2;
+        let p = dragStartPos + dx;
+        // Normalize to [-half, 0]
+        p = ((p % half) + half) % half;
+        if (p > 0) p -= half;
+        positions[i] = p;
+        row.style.transform = `translateX(${p}px)`;
+        e.preventDefault();
+      });
+
+      const endDrag = () => {
+        if (dragIdx === i) {
+          dragging = false;
+          dragIdx = -1;
+        }
+      };
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+    });
+
+    // Animation loop
+    function animate() {
+      if (!paused && !dragging) {
+        rows.forEach((row, i) => {
+          const dir = i === 0 ? -1 : 1;
+          positions[i] += speed * dir;
+          const half = row.scrollWidth / 2;
+          if (positions[i] <= -half) positions[i] += half;
+          if (positions[i] > 0) positions[i] -= half;
+          row.style.transform = `translateX(${positions[i]}px)`;
+        });
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // Initialize: row 2 starts offset at -half
+    requestAnimationFrame(() => {
+      if (rows[1]) {
+        positions[1] = -(rows[1].scrollWidth / 2);
+      }
+      animate();
+    });
+  }
+</script>

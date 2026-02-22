@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+apps/web/dist/
+apps/web/.astro/
+*.exe
+
+# Go binaries
+apps/api-quoter/bin/
+apps/api-scheduler/bin/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude Code local settings (may contain test credentials)
+.claude/settings.local.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

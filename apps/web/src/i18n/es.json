@@ -1,0 +1,324 @@
+{
+  "nav": {
+    "services": "Servicios",
+    "projects": "Proyectos",
+    "blog": "Blog",
+    "quote": "Cotizar",
+    "schedule": "Agendar"
+  },
+  "footer": {
+    "copyright": "© 2025 JoleDev — Joel Ernesto López Verdugo",
+    "tagline": "Desarrollo a la medida de tu negocio",
+    "location": "Ensenada, Baja California, México",
+    "status": "Estado de servicios",
+    "quickLinks": "Enlaces rápidos",
+    "contact": "Contacto"
+  },
+  "common": {
+    "readMore": "Leer más",
+    "viewAll": "Ver todos",
+    "viewAllProjects": "Ver todos los proyectos",
+    "viewAllPosts": "Ver todos los artículos",
+    "backToHome": "Volver al inicio",
+    "comingSoon": "Próximamente",
+    "contactEmail": "joel@joledev.com"
+  },
+  "hero": {
+    "titleLine1": "Desarrollo tecnológico",
+    "titleLine2": "a la medida de tu negocio",
+    "subtitle": "Creo soluciones digitales que simplifican la operación de empresas de cualquier tamaño — desde startups hasta corporativos, en México y el mundo.",
+    "ctaPrimary": "Cotiza tu proyecto",
+    "ctaSecondary": "Conoce mi trabajo"
+  },
+  "sections": {
+    "servicesTitle": "¿Qué puedo hacer por tu negocio?",
+    "aboutTitle": "Hola, soy Joel",
+    "aboutBio1": "Ingeniero en Computación con más de 5 años de experiencia desarrollando soluciones tecnológicas para empresas de todos los tamaños — desde cooperativas locales hasta corporativos con cientos de empleados.",
+    "aboutBio2": "Me especializo en crear sistemas que realmente resuelven problemas: desde plataformas web y e-commerce hasta sistemas de gestión empresarial, automatizaciones con IA y capacitación de equipos. Trabajo con presupuestos adaptables a tu realidad.",
+    "aboutBio3": "Mi enfoque es simple: entender tu negocio primero, construir después. Cada proyecto que entrego está pensado para crecer contigo.",
+    "featuredProjects": "Proyectos destacados",
+    "recentBlog": "Últimos artículos",
+    "ctaTitle": "¿Tienes un proyecto en mente?",
+    "ctaSubtitle": "Cuéntame tu idea y te preparo una propuesta sin compromiso.",
+    "ctaPrimary": "Cotiza tu proyecto",
+    "ctaSecondary": "Agenda una reunión"
+  },
+  "experience": {
+    "title": "Experiencia profesional",
+    "items": [
+      {
+        "company": "Coding Giants",
+        "logo": "/logos/coding-giants.png",
+        "role": "Instructor de Programación",
+        "type": "Remoto",
+        "period": "Oct 2025 — Presente",
+        "description": "Enseñanza de programación y desarrollo de videojuegos para niños y adolescentes, con planes de estudio personalizados por nivel.",
+        "products": ["Educación Tech"],
+        "stack": ["C#", "Unity"],
+        "highlights": [
+          "Clases personalizadas de programación y desarrollo de videojuegos",
+          "Planes de estudio adaptados por nivel y edad del estudiante"
+        ]
+      },
+      {
+        "company": "AforeCoppel",
+        "logo": "/logos/aforecoppel.png",
+        "role": "Arquitecto de Software",
+        "type": "Remoto",
+        "period": "Nov 2023 — May 2025",
+        "description": "Lideré equipo de 5 desarrolladores refactorizando código legacy a arquitectura moderna y migrando infraestructura completa de VPS a AWS, reduciendo tiempos de respuesta un 40% y costos un 35%.",
+        "products": ["Sistemas Administrativos", "APIs e Integraciones", "Infraestructura Cloud"],
+        "stack": ["Java", "Spring Boot", "TypeScript", "Node.js", "AWS", "Terraform", "PostgreSQL"],
+        "highlights": [
+          "Refactorización de código legacy a arquitectura moderna con Spring Boot",
+          "Migración completa de VPS y microservicios a AWS (ECS, Lambda, S3)",
+          "Reducción de tiempos de respuesta 40% y costos de infraestructura 35%",
+          "Liderazgo de equipo de 5 desarrolladores"
+        ]
+      },
+      {
+        "company": "tuplanderetiro.mx",
+        "logo": "/logos/tuplanderetiro.png",
+        "role": "Desarrollador Full Stack",
+        "type": "Remoto",
+        "period": "Oct 2024 — Oct 2025",
+        "description": "Landing page completa con diseño UI/UX profesional, automatizaciones de webinars y campañas publicitarias para asesores financieros, con 99.8% de disponibilidad.",
+        "products": ["Páginas Web", "Plataformas SaaS"],
+        "stack": ["React", "Node.js", "MongoDB", "GitHub Actions"],
+        "highlights": [
+          "Landing page completa con diseño UI/UX de diseñadora gráfica profesional",
+          "Automatización de conexiones a webinars y campañas publicitarias",
+          "Contenido SEO optimizado con 99.8% de disponibilidad"
+        ]
+      },
+      {
+        "company": "Sociedad Cooperativa Purísima",
+        "logo": "/logos/pacifico-norte.png",
+        "role": "Desarrollador Full Stack",
+        "type": "Híbrido",
+        "period": "Jun 2024 — Ago 2024",
+        "description": "E-commerce minimalista y eficaz para venta de productos del mar a todo México con estimaciones de envío en tiempo real.",
+        "products": ["Tiendas en Línea", "Control de Inventario"],
+        "stack": ["PHP", "HTMX", "MySQL", "Stripe", "Twilio"],
+        "highlights": [
+          "E-commerce minimalista enfocado en usabilidad y conversión",
+          "Estimaciones de envío en tiempo real a todo México",
+          "Inventario automatizado con alertas de stock"
+        ]
+      },
+      {
+        "company": "Coop. Leyes de Reforma",
+        "logo": "/logos/leyes-de-reforma.png",
+        "role": "Arquitecto SaaS",
+        "type": "Híbrido",
+        "period": "Nov 2023 — Presente",
+        "description": "Ecosistema digital completo con múltiples aplicaciones y bots, procesando +10,000 transacciones mensuales para la operación integral de la cooperativa.",
+        "products": ["Bot WhatsApp", "App Móvil Socios", "Nómina", "Sistema Admin", "Landing Page"],
+        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
+        "highlights": [
+          "Landing page institucional",
+          "Sistema administrativo completo de gestión de cooperativa",
+          "Calculadora de nómina basada en entradas y salidas de producto",
+          "Bot de WhatsApp para solicitudes de empleados (pedidos, estatus, historial)",
+          "App móvil para socios: entradas/salidas, costos de insumos, nómina estimada y oficial, noticias y logros",
+          "Automatización de procesos operativos",
+          "Sistema de rastreo de errores con notificaciones por correo",
+          "Facturación automática CFDI"
+        ]
+      },
+      {
+        "company": "Coop. Emancipación",
+        "logo": "/logos/emancipacion.png",
+        "role": "Desarrollador Full Stack",
+        "type": "Híbrido",
+        "period": "Feb 2023 — May 2023",
+        "description": "E-commerce minimalista y funcional con portal de noticias y newsletters automatizadas alcanzando +2,000 suscriptores, diseñado para fácil mantenimiento y escalabilidad.",
+        "products": ["Tiendas en Línea", "Páginas Web"],
+        "stack": ["Symfony", "MySQL", "Stripe", "Twilio"],
+        "highlights": [
+          "E-commerce minimalista con diseño enfocado en funcionalidad",
+          "Portal de noticias con newsletters automatizadas (+2,000 suscriptores)",
+          "Arquitectura diseñada para fácil mantenimiento y escalabilidad"
+        ]
+      },
+      {
+        "company": "Coop. Progreso",
+        "logo": "/logos/progreso.png",
+        "role": "Arquitecto SaaS",
+        "type": "Híbrido",
+        "period": "Dic 2022 — Presente",
+        "description": "Digitalización integral de toda la operación de la cooperativa — el proyecto más grande en alcance, con app móvil en Play Store para +50 usuarios.",
+        "products": ["App Membresía", "CMS Dashboard", "Nextcloud", "Almacén", "Reportes", "Landing Page"],
+        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
+        "highlights": [
+          "Generación y automatización de remisiones",
+          "Procesamiento y rastreo de productos",
+          "Landing page con CMS — todo el contenido administrable desde un dashboard",
+          "Entornos de trabajo con Nextcloud (videollamadas, nube, chats)",
+          "Sistema de usuarios y permisos granulares",
+          "App de membresía digital en Play Store (próximamente App Store)",
+          "Control de almacén y automatización de entregas",
+          "Reportes en tiempo real",
+          "Rastreo de errores automático con notificaciones por correo"
+        ]
+      },
+      {
+        "company": "Bocana Adventure",
+        "logo": "/logos/bocana-adventure.png",
+        "role": "Desarrollador Full Stack",
+        "type": "Híbrido",
+        "period": "Ago 2022 — Oct 2022",
+        "description": "Sistema de reservación de cabañas que automatiza cobros, disponibilidad y gestión de restaurante e insumos para un complejo turístico.",
+        "products": ["Reservaciones y Citas", "Sistemas Administrativos"],
+        "stack": ["PHP", "Ajax", "MySQL", "Stripe"],
+        "highlights": [
+          "Sistema de reservación con gestión de disponibilidad en tiempo real",
+          "Automatización de cobros y confirmaciones",
+          "Gestión de restaurante e inventario de insumos"
+        ]
+      }
+    ]
+  },
+  "stats": {
+    "yearsExperience": "Años de experiencia",
+    "projectsDelivered": "Proyectos entregados",
+    "happyClients": "Clientes satisfechos"
+  },
+  "services": {
+    "websites": {
+      "title": "Páginas Web",
+      "description": "Sitios rápidos, modernos y optimizados para que tus clientes te encuentren."
+    },
+    "ecommerce": {
+      "title": "Tiendas en Línea",
+      "description": "E-commerce con pagos, envíos, inventario y facturación integrados."
+    },
+    "mobileApp": {
+      "title": "Aplicaciones Móviles",
+      "description": "Apps nativas y multiplataforma para iOS y Android con Flutter o React Native."
+    },
+    "systems": {
+      "title": "Sistemas Administrativos",
+      "description": "Software a medida para controlar tu operación: usuarios, reportes, dashboards."
+    },
+    "saas": {
+      "title": "Plataformas SaaS",
+      "description": "Productos multi-tenant con suscripciones, onboarding y API para tus clientes."
+    },
+    "inventory": {
+      "title": "Control de Inventario",
+      "description": "Rastrea tu stock en tiempo real, con alertas y reportes automáticos."
+    },
+    "pos": {
+      "title": "Puntos de Venta",
+      "description": "Sistemas de cobro personalizados para tu tipo de negocio."
+    },
+    "billing": {
+      "title": "Facturación Automática",
+      "description": "Genera facturas CFDI y automatiza tu proceso de facturación."
+    },
+    "booking": {
+      "title": "Reservaciones y Citas",
+      "description": "Calendarios de reserva con confirmaciones automáticas por email y SMS."
+    },
+    "apiIntegration": {
+      "title": "APIs e Integraciones",
+      "description": "Conecta tu sistema con Stripe, PayPal, WhatsApp, SAT y más servicios externos."
+    },
+    "cloudDevOps": {
+      "title": "Infraestructura Cloud",
+      "description": "Servidores en AWS, Docker, CI/CD y monitoreo para tu aplicación."
+    },
+    "modernization": {
+      "title": "Actualización Tecnológica",
+      "description": "Tablets, computadoras, redes — moderniza la infraestructura de tu empresa."
+    },
+    "ai": {
+      "title": "Integraciones con IA",
+      "description": "Bots de WhatsApp, automatización inteligente, asistentes virtuales."
+    },
+    "consulting": {
+      "title": "Consultoría y Arquitectura",
+      "description": "Análisis técnico, diseño de arquitectura, revisión de código y roadmap tecnológico para tu proyecto."
+    },
+    "teamTraining": {
+      "title": "Capacitación de Equipos",
+      "description": "Entrena a tu equipo en nuevas tecnologías, herramientas y procesos. Cursos presenciales o remotos, adaptados a tu stack."
+    },
+    "migration": {
+      "title": "Migración y Modernización",
+      "description": "Lleva tu sistema legacy a tecnologías modernas: refactorización de código, migración a la nube y optimización de rendimiento."
+    }
+  },
+  "scheduler": {
+    "title": "Agenda una reunión",
+    "subtitle": "Selecciona el tipo de reunión, fecha y horario que mejor te funcione.",
+    "step1Title": "Tipo de reunión",
+    "inPerson": "Presencial",
+    "inPersonDesc": "Paso por tus oficinas",
+    "videoCall": "Videollamada",
+    "videoCallDesc": "Nos conectamos por video",
+    "step2Title": "Selecciona una fecha",
+    "available": "Disponible",
+    "unavailable": "No disponible",
+    "step3Title": "Selecciona un horario",
+    "step4Title": "Tus datos de contacto",
+    "name": "Nombre",
+    "email": "Email",
+    "phone": "Teléfono",
+    "company": "Empresa",
+    "address": "Dirección",
+    "addressHint": "Donde nos reuniremos",
+    "notes": "Notas",
+    "notesPlaceholder": "¿Qué te gustaría discutir?",
+    "confirm": "Confirmar reunión",
+    "step5Title": "¡Reunión agendada!",
+    "confirmationMsg": "Te envié un email de confirmación a",
+    "bookingId": "ID de reservación",
+    "backToHome": "Volver al inicio",
+    "loading": "Cargando disponibilidad...",
+    "noSlots": "No hay horarios disponibles para este día.",
+    "noSlotsMonth": "No hay disponibilidad este mes. Prueba el siguiente.",
+    "slotTaken": "Este horario ya no está disponible. Por favor selecciona otro.",
+    "errorGeneric": "Ocurrió un error. Inténtalo de nuevo.",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "monthNames": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "dayNames": ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"],
+    "meetingDate": "Fecha",
+    "meetingTime": "Hora",
+    "meetingType": "Tipo"
+  },
+  "admin": {
+    "title": "Admin — Agenda",
+    "password": "Contraseña de administrador",
+    "login": "Entrar",
+    "createSlots": "Crear disponibilidad",
+    "startDate": "Fecha inicio",
+    "endDate": "Fecha fin",
+    "weekdays": "Días de la semana",
+    "timeSlots": "Horarios",
+    "startTime": "Hora inicio",
+    "endTime": "Hora fin",
+    "addTimeSlot": "Agregar horario",
+    "generate": "Crear slots",
+    "deleteSlot": "Eliminar slot",
+    "cancelBooking": "Cancelar reservación",
+    "bookingDetails": "Detalles de la reservación",
+    "confirmed": "Confirmada",
+    "cancelled": "Cancelada",
+    "slotsCreated": "slots creados",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie",
+    "sat": "Sáb",
+    "sun": "Dom"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "message": "Lo sentimos, la página que buscas no existe o fue movida.",
+    "backHome": "Volver al inicio"
+  }
+}

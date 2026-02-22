@@ -1,0 +1,101 @@
+services:
+  traefik:
+    image: traefik:v3.2
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=web"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${CONTACT_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/certs
+    networks:
+      - web
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./apps/web/dist:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+    networks:
+      - web
+    restart: unless-stopped
+
+  api-quoter:
+    build: ./apps/api-quoter
+    environment:
+      - PORT=8081
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CONTACT_EMAIL=${CONTACT_EMAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quoter.rule=Host(`api.${DOMAIN}`) && PathPrefix(`/quotes`)"
+      - "traefik.http.routers.quoter.entrypoints=websecure"
+      - "traefik.http.routers.quoter.tls.certresolver=letsencrypt"
+      - "traefik.http.services.quoter.loadbalancer.server.port=8081"
+    networks:
+      - web
+      - internal
+    restart: unless-stopped
+
+  api-scheduler:
+    build: ./apps/api-scheduler
+    environment:
+      - PORT=8082
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CONTACT_EMAIL=${CONTACT_EMAIL}
+      - SCHEDULER_ADMIN_PASSWORD=${SCHEDULER_ADMIN_PASSWORD}
+      - API_BASE_URL=https://api.${DOMAIN}
+    volumes:
+      - sqlite-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scheduler.rule=Host(`api.${DOMAIN}`) && PathPrefix(`/scheduler`)"
+      - "traefik.http.routers.scheduler.entrypoints=websecure"
+      - "traefik.http.routers.scheduler.tls.certresolver=letsencrypt"
+      - "traefik.http.services.scheduler.loadbalancer.server.port=8082"
+    networks:
+      - web
+      - internal
+    restart: unless-stopped
+
+  gatus:
+    image: twinproduction/gatus:latest
+    volumes:
+      - ./apps/status/config.yaml:/config/config.yaml:ro
+      - gatus-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.status.rule=Host(`status.${DOMAIN}`)"
+      - "traefik.http.routers.status.entrypoints=websecure"
+      - "traefik.http.routers.status.tls.certresolver=letsencrypt"
+      - "traefik.http.services.status.loadbalancer.server.port=8080"
+    networks:
+      - web
+    restart: unless-stopped
+
+volumes:
+  certs:
+  sqlite-data:
+  gatus-data:
+
+networks:
+  web:
+    external: true
+  internal:
+    driver: bridge

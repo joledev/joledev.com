@@ -1,0 +1,137 @@
+---
+import ScrollReveal from '../ui/ScrollReveal.svelte';
+import TextReveal from '../ui/TextReveal.svelte';
+import CountUp from '../ui/CountUp.svelte';
+import TechCarousel from './TechCarousel.astro';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section id={lang === 'es' ? 'sobre-mi' : 'about'} class="px-4 py-20 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      <!-- Photo -->
+      <ScrollReveal client:visible direction="left">
+        <div class="mx-auto max-w-sm lg:max-w-none">
+          <!-- TODO: Reemplazar con foto real de Joel -->
+          <div class="aspect-square overflow-hidden rounded-2xl border border-border bg-bg-secondary shadow-lg">
+            <div class="flex h-full items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-text-muted">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </ScrollReveal>
+
+      <!-- Text -->
+      <div>
+        <ScrollReveal client:visible direction="right">
+          <TextReveal
+            client:visible
+            text={`${t.sections.aboutTitle}`}
+            tag="h2"
+            effect="wave"
+            mode="letters"
+            class="font-display text-3xl font-bold sm:text-4xl"
+          />
+        </ScrollReveal>
+
+        <ScrollReveal client:visible direction="right" delay={0.1}>
+          <p class="mt-6 leading-relaxed text-text-secondary">
+            {t.sections.aboutBio1}
+          </p>
+        </ScrollReveal>
+
+        <ScrollReveal client:visible direction="right" delay={0.2}>
+          <p class="mt-4 leading-relaxed text-text-secondary">
+            {t.sections.aboutBio2}
+          </p>
+        </ScrollReveal>
+
+        <ScrollReveal client:visible direction="right" delay={0.3}>
+          <p class="mt-4 leading-relaxed text-text-secondary">
+            {t.sections.aboutBio3}
+          </p>
+        </ScrollReveal>
+
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <ScrollReveal client:visible direction="up" delay={0.2}>
+      <div class="stats-grid mt-14 grid grid-cols-3 gap-4 sm:gap-6">
+        <div class="stat-card">
+          <span class="stat-number">
+            <CountUp client:visible value={5} suffix="+" duration={2000} />
+          </span>
+          <span class="stat-label">{t.stats.yearsExperience}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">
+            <CountUp client:visible value={30} suffix="+" duration={2000} delay={200} />
+          </span>
+          <span class="stat-label">{t.stats.projectsDelivered}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">
+            <CountUp client:visible value={15} suffix="+" duration={2000} delay={400} />
+          </span>
+          <span class="stat-label">{t.stats.happyClients}</span>
+        </div>
+      </div>
+    </ScrollReveal>
+
+    <!-- Tech Carousel — full width below the 2-col grid -->
+    <ScrollReveal client:visible direction="up" delay={0.4}>
+      <div class="mt-14">
+        <TechCarousel />
+      </div>
+    </ScrollReveal>
+  </div>
+</section>
+
+<style>
+  @keyframes wave {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(20deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(15deg); }
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    border-radius: 1rem;
+    background: var(--color-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-accent-primary);
+  }
+
+  @media (min-width: 640px) {
+    .stat-number {
+      font-size: 3rem;
+    }
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+</style>

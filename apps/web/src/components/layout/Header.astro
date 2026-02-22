@@ -1,0 +1,57 @@
+---
+import ThemeToggle from './ThemeToggle.svelte';
+import MobileMenu from './MobileMenu.svelte';
+import { getLangFromUrl, useTranslations, getLocalizedPath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const otherLang = lang === 'es' ? 'en' : 'es';
+
+const navItems = [
+  { label: t.nav.services, href: `/${lang}/#${lang === 'es' ? 'servicios' : 'services'}` },
+  { label: t.nav.projects, href: `/${lang}/${lang === 'es' ? 'proyectos' : 'projects'}/` },
+  { label: t.nav.blog, href: `/${lang}/blog/` },
+  { label: t.nav.quote, href: `/${lang}/${lang === 'es' ? 'cotizar' : 'quote'}/` },
+  { label: t.nav.schedule, href: `/${lang}/${lang === 'es' ? 'agendar' : 'schedule'}/` },
+];
+---
+
+<header class="sticky top-0 z-30 border-b border-border bg-glass backdrop-blur-md">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <!-- Logo -->
+    <a href={`/${lang}/`} class="font-display text-xl font-bold text-accent-primary">
+      JoleDev
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="hidden items-center gap-6 md:flex">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class="text-sm text-text-secondary transition-colors hover:text-accent-primary"
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <!-- Right side: lang toggle + theme toggle + mobile menu -->
+    <div class="flex items-center gap-2">
+      <!-- Language toggle -->
+      <a
+        href={getLocalizedPath(Astro.url.pathname, otherLang)}
+        class="rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
+      >
+        {otherLang.toUpperCase()}
+      </a>
+
+      <!-- Theme toggle -->
+      <ThemeToggle client:load />
+
+      <!-- Mobile menu -->
+      <div class="md:hidden">
+        <MobileMenu client:load lang={lang} navItems={navItems} />
+      </div>
+    </div>
+  </div>
+</header>

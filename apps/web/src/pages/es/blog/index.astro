@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BlogFilter from '../../../components/blog/BlogFilter.svelte';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog');
+const posts = allPosts
+  .filter((p) => p.data.lang === 'es' && !p.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const categories = [
+  { value: 'tutorial', label: 'Tutoriales' },
+  { value: 'case-study', label: 'Casos de estudio' },
+  { value: 'opinion', label: 'Opiniones' },
+  { value: 'project', label: 'Proyectos' },
+];
+---
+
+<BaseLayout
+  title="Blog"
+  description="Artículos sobre desarrollo web, tecnología, automatización y proyectos reales."
+>
+  <section class="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+    <div class="mx-auto max-w-7xl">
+      <h1 class="font-display text-4xl font-bold sm:text-5xl">Blog</h1>
+      <p class="mt-3 text-lg text-text-secondary">
+        Artículos sobre desarrollo, tecnología y proyectos
+      </p>
+
+      <div class="mt-10">
+        <BlogFilter
+          client:load
+          posts={posts}
+          lang="es"
+          categories={categories}
+          noPostsMessage="No hay artículos en esta categoría aún."
+          readMoreLabel="Leer más"
+          blogBasePath="/es/blog/"
+        />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

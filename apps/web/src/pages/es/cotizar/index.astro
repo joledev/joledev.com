@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Quoter from '../../../components/quoter/Quoter.svelte';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || '';
+---
+
+<BaseLayout title="Cotiza tu proyecto" description="Obtén un presupuesto estimado para tu proyecto de desarrollo de software.">
+  <section class="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+    <div class="mx-auto max-w-4xl">
+      <Quoter client:load lang="es" apiUrl={apiUrl} />
+    </div>
+  </section>
+</BaseLayout>

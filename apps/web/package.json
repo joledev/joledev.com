@@ -1,0 +1,39 @@
+{
+  "name": "web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.13",
+    "@astrojs/rss": "^4.0.15",
+    "@astrojs/sitemap": "^3.7.0",
+    "@astrojs/svelte": "^7.2.5",
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@tailwindcss/vite": "^4.1.18",
+    "@threlte/core": "^8.3.1",
+    "@threlte/extras": "^9.7.1",
+    "@threlte/flex": "^2.1.1",
+    "animejs": "^4.3.6",
+    "astro": "^5.17.1",
+    "motion": "^12.34.0",
+    "satori": "^0.19.2",
+    "satori-html": "^0.3.2",
+    "sharp": "^0.34.5",
+    "svelte": "^5.51.0",
+    "tailwindcss": "^4.1.18",
+    "three": "^0.182.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/animejs": "^3.1.13"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  }
+}

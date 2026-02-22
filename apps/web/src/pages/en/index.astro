@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/hero/Hero.astro';
+import Services from '../../components/services/Services.astro';
+import About from '../../components/about/About.astro';
+import Experience from '../../components/experience/Experience.astro';
+import ProjectGrid from '../../components/portfolio/ProjectGrid.astro';
+import RecentPosts from '../../components/blog/RecentPosts.astro';
+import CallToAction from '../../components/cta/CallToAction.astro';
+import QuoterModal from '../../components/quoter/QuoterModal.svelte';
+import StructuredData from '../../components/seo/StructuredData.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || '';
+---
+
+<BaseLayout
+  title="Home"
+  description="Technology development tailored to your business. Digital solutions for businesses of any size in Mexico and worldwide."
+  keywords="web developer mexico, software architect, custom software development, business systems"
+>
+  <StructuredData type="website" />
+  <StructuredData type="service" />
+  <Hero />
+  <Services />
+  <About />
+  <Experience />
+  <ProjectGrid />
+  <RecentPosts />
+  <CallToAction />
+  <QuoterModal client:load lang="en" apiUrl={apiUrl} />
+</BaseLayout>

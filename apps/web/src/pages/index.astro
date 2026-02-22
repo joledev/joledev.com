@@ -1,0 +1,24 @@
+---
+// Redirect to /es/ or /en/ based on Accept-Language header
+const acceptLang = Astro.request.headers.get('accept-language') ?? '';
+const prefersEnglish = acceptLang.split(',').some((part) => {
+  const [lang] = part.trim().split(';');
+  return lang === 'en' || lang.startsWith('en-');
+});
+const targetLang = prefersEnglish ? 'en' : 'es';
+---
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=/${targetLang}/`} />
+    <link rel="canonical" href={`/${targetLang}/`} />
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <script define:vars={{ targetLang }}>
+      window.location.replace(`/${targetLang}/`);
+    </script>
+  </body>
+</html>

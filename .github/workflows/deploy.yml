@@ -1,0 +1,85 @@
+name: Deploy JoleDev
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: apps/web
+
+      - name: Build Astro
+        run: pnpm build
+        working-directory: apps/web
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist/
+
+  build-apis:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api: [api-quoter, api-scheduler]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: apps/${{ matrix.api }}/go.sum
+
+      - name: Build
+        run: go build ./...
+        working-directory: apps/${{ matrix.api }}
+
+      # Docker build will happen on the VPS or via registry
+      # - name: Build Docker image
+      #   run: docker build -t joledev/${{ matrix.api }} .
+      #   working-directory: apps/${{ matrix.api }}
+
+  deploy:
+    needs: [build-web, build-apis]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist/
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/joledev
+            git pull origin main
+            docker compose build
+            docker compose up -d

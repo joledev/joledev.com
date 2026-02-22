@@ -1,0 +1,101 @@
+---
+import ScrollReveal from '../ui/ScrollReveal.svelte';
+import TextReveal from '../ui/TextReveal.svelte';
+import MagneticButton from '../ui/MagneticButton.svelte';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const quotePath = lang === 'es' ? '/es/cotizar/' : '/en/quote/';
+const schedulePath = lang === 'es' ? '/es/agendar/' : '/en/schedule/';
+---
+
+<section id="cta" class="px-4 py-20 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-7xl">
+    <ScrollReveal client:visible>
+      <div class="cta-card relative overflow-hidden rounded-2xl p-10 text-center sm:p-16">
+        <!-- Animated border glow -->
+        <div class="glow-border"></div>
+
+        <div class="relative z-10">
+          <TextReveal
+            client:visible
+            text={t.sections.ctaTitle}
+            tag="h2"
+            effect="wave"
+            mode="words"
+            class="font-display text-3xl font-bold sm:text-4xl"
+          />
+          <div class="mx-auto mt-4 max-w-lg">
+            <TextReveal
+              client:visible
+              text={t.sections.ctaSubtitle}
+              tag="p"
+              effect="fadeUp"
+              mode="words"
+              delay={300}
+              class="text-text-secondary sm:text-lg"
+            />
+          </div>
+          <div class="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <MagneticButton client:visible>
+              <a
+                href={quotePath}
+                class="inline-flex items-center gap-2 rounded-lg bg-accent-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent-primary/25 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-accent-primary/30 sm:text-base"
+              >
+                {t.sections.ctaPrimary}
+              </a>
+            </MagneticButton>
+            <MagneticButton client:visible>
+              <a
+                href={schedulePath}
+                class="inline-flex items-center gap-2 rounded-lg border border-accent-primary px-8 py-3.5 text-sm font-semibold text-accent-primary transition-all duration-200 hover:bg-accent-subtle sm:text-base"
+              >
+                {t.sections.ctaSecondary}
+              </a>
+            </MagneticButton>
+          </div>
+        </div>
+      </div>
+    </ScrollReveal>
+  </div>
+</section>
+
+<style>
+  .cta-card {
+    background: var(--color-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
+    position: relative;
+  }
+
+  .glow-border {
+    position: absolute;
+    inset: -1px;
+    border-radius: 1rem;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      var(--color-accent-primary),
+      transparent 40%,
+      transparent 60%,
+      var(--color-accent-light)
+    );
+    background-size: 200% 200%;
+    animation: glowMove 6s ease-in-out infinite;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+  }
+
+  @keyframes glowMove {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+</style>

@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import AdminScheduler from '../../../../components/scheduler/AdminScheduler.svelte';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || '';
+---
+
+<BaseLayout title="Admin — Agenda" description="Panel de administración de la agenda de reuniones.">
+  <section class="px-4 py-8 sm:px-6 lg:px-8">
+    <AdminScheduler client:load lang="es" apiUrl={apiUrl} />
+  </section>
+</BaseLayout>

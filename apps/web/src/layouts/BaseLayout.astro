@@ -1,0 +1,96 @@
+---
+import '../styles/global.css';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  keywords?: string;
+  noIndex?: boolean;
+}
+
+const { title, description = '', ogImage = '/og/default.png', keywords = '', noIndex = false } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+
+// Build hreflang alternate URLs
+const pathname = Astro.url.pathname;
+const alternateLang = lang === 'es' ? 'en' : 'es';
+const alternatePathname = lang === 'es'
+  ? pathname.replace(/^\/es\//, '/en/').replace(/^\/es$/, '/en/')
+  : pathname.replace(/^\/en\//, '/es/').replace(/^\/en$/, '/es/');
+const alternateUrl = new URL(alternatePathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="application/rss+xml" title="JoleDev Blog" href="/feed.xml" />
+
+    <title>{title} | JoleDev</title>
+    <meta name="description" content={description} />
+    {keywords && <meta name="keywords" content={keywords} />}
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonicalUrl.href} />
+
+    <!-- i18n hreflang -->
+    <link rel="alternate" hreflang={lang} href={canonicalUrl.href} />
+    <link rel="alternate" hreflang={alternateLang} href={alternateUrl.href} />
+    <link rel="alternate" hreflang="x-default" href={new URL('/es/', Astro.site).href} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} | JoleDev`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).href} />
+    <meta property="og:url" content={canonicalUrl.href} />
+    <meta property="og:locale" content={lang === 'es' ? 'es_MX' : 'en_US'} />
+    <meta property="og:site_name" content="JoleDev" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | JoleDev`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(ogImage, Astro.site).href} />
+
+    <!-- Theme color -->
+    <meta name="theme-color" content="#2563EB" />
+
+    <!-- Satoshi font from Fontshare -->
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Prevent theme flash -->
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+          document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen bg-bg-primary text-text-primary">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent-primary focus:px-4 focus:py-2 focus:text-white">
+      {lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}
+    </a>
+    <Header />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

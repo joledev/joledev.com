@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://joledev.com/sitemap-index.xml

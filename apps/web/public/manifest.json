@@ -1,0 +1,12 @@
+{
+  "name": "JoleDev - Joel López Verdugo",
+  "short_name": "JoleDev",
+  "description": "Desarrollo tecnológico a la medida de tu negocio",
+  "start_url": "/es/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#2563EB",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

@@ -1,0 +1,38 @@
+# JoleDev - Joel López Verdugo
+
+## About
+Joel López Verdugo is a Full Stack Developer and Software Architect based in Ensenada, Baja California, Mexico. He specializes in building custom software solutions for businesses of any size — from startups to enterprises, in Mexico and worldwide.
+
+## Services
+- Custom website development
+- Online stores (e-commerce)
+- Mobile apps (iOS & Android)
+- Administrative management systems
+- SaaS platforms
+- Inventory control systems
+- Point of sale (POS) systems
+- Automated billing and CFDI invoicing
+- Bookings and appointment systems
+- APIs and integrations
+- Cloud infrastructure and DevOps
+- AI integrations (WhatsApp bots, chatbots, automation)
+- Consulting and software architecture
+- Team training
+- Software migration and modernization
+
+## Location
+Ensenada, Baja California, Mexico
+Serves clients in Mexico and worldwide
+
+## Contact
+Website: https://joledev.com
+Email: joel@joledev.com
+Quote: https://joledev.com/es/cotizar
+Schedule: https://joledev.com/es/agendar
+
+## Technologies
+TypeScript, Go, PHP, Python, Svelte, React, Astro, Flutter, React Native,
+Docker, AWS, PostgreSQL, MySQL, SQLite, Node.js, Tailwind CSS, Three.js
+
+## Languages
+Spanish (native), English (professional)
