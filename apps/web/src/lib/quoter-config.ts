@@ -43,7 +43,7 @@ export interface Feature {
 
 export const PROJECT_TYPES: ProjectType[] = [
   {
-    key: 'website',
+    key: 'websites',
     base: 7500,
     label: { es: 'Página Web', en: 'Website' },
     icon: 'globe',
@@ -51,7 +51,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Tu presencia digital profesional. Incluye diseño personalizado, optimización para móviles, SEO, blog y formularios de contacto. Ideal para captar clientes en línea.',
       en: 'Your professional digital presence. Includes custom design, mobile optimization, SEO, blog and contact forms. Perfect for attracting clients online.',
     },
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'responsiveDesign',
       'blog',
@@ -74,7 +74,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Vende productos en línea con carrito de compras, pagos con tarjeta, integración de envíos, facturación automática y gestión de inventario.',
       en: 'Sell products online with shopping cart, card payments, shipping integration, automatic invoicing and inventory management.',
     },
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'productCatalog',
       'shoppingCart',
@@ -99,7 +99,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'App nativa para iOS y Android con Flutter o React Native. Push notifications, modo offline, GPS, biometría y publicación en tiendas de apps.',
       en: 'Native app for iOS and Android with Flutter or React Native. Push notifications, offline mode, GPS, biometrics and app store publishing.',
     },
-    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'crossPlatform',
       'pushNotifications',
@@ -114,7 +114,7 @@ export const PROJECT_TYPES: ProjectType[] = [
     ],
   },
   {
-    key: 'adminSystem',
+    key: 'systems',
     base: 17500,
     label: { es: 'Sistema Administrativo', en: 'Management System' },
     icon: 'monitor',
@@ -122,7 +122,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Sistema a medida para gestionar tu negocio: usuarios, reportes, exportación de datos, multi-sucursal, auditoría y flujos de trabajo automatizados.',
       en: 'Custom system to manage your business: users, reports, data export, multi-branch, auditing and automated workflows.',
     },
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'usersRoles',
       'reports',
@@ -145,7 +145,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Plataforma multi-cliente con suscripciones, API pública, webhooks, métricas de uso y marca blanca. Lista para escalar tu negocio digital.',
       en: 'Multi-tenant platform with subscriptions, public API, webhooks, usage metrics and white labeling. Ready to scale your digital business.',
     },
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'multiTenant',
       'subscriptions',
@@ -168,7 +168,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Controla entradas, salidas, alertas de stock bajo, códigos de barra, multi-almacén y órdenes de compra en tiempo real.',
       en: 'Track entries, exits, low stock alerts, barcodes, multi-warehouse and purchase orders in real time.',
     },
-    image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'stockInOut',
       'lowStockAlerts',
@@ -189,7 +189,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Punto de venta con registro de ventas, corte de caja, múltiples métodos de pago, tickets, descuentos y reportes de ventas.',
       en: 'Point of sale with sales registry, cash cuts, multiple payment methods, tickets, discounts and sales reports.',
     },
-    image: 'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'salesRegistry',
       'cashCut',
@@ -210,7 +210,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Genera CFDI, facturación recurrente, portal de clientes, reportes fiscales e integración contable. Cumple con el SAT al 100%.',
       en: 'Generate CFDI invoices, recurring billing, client portal, tax reports and accounting integration. Fully SAT compliant.',
     },
-    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'cfdiGeneration',
       'satCatalog',
@@ -231,7 +231,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Sistema de reservaciones en línea con calendario, recordatorios SMS, agenda por empleado y sincronización con Google Calendar.',
       en: 'Online booking system with calendar view, SMS reminders, employee schedules and Google Calendar sync.',
     },
-    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'onlineBooking',
       'calendarView',
@@ -252,7 +252,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Conecta tus sistemas con APIs REST/GraphQL, Stripe, Twilio, PayPal, SAT, Uber Direct, Envia.com y OAuth/SSO.',
       en: 'Connect your systems with REST/GraphQL APIs, Stripe, Twilio, PayPal, SAT, Uber Direct, Envia.com and OAuth/SSO.',
     },
-    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'restApi',
       'stripeIntegration',
@@ -275,7 +275,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Infraestructura en la nube con AWS, Docker, CI/CD, Terraform, SSL, monitoreo, auto-scaling y respaldos automáticos.',
       en: 'Cloud infrastructure with AWS, Docker, CI/CD, Terraform, SSL, monitoring, auto-scaling and automatic backups.',
     },
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'awsSetup',
       'dockerContainers',
@@ -290,7 +290,7 @@ export const PROJECT_TYPES: ProjectType[] = [
     ],
   },
   {
-    key: 'techUpdate',
+    key: 'techUpdate', // quoter-only — no matching i18n service key
     base: 6000,
     label: { es: 'Actualización Tecnológica', en: 'Tech Modernization' },
     icon: 'refreshCw',
@@ -298,7 +298,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Moderniza tu infraestructura: diagnóstico, configuración de equipos, migración de datos, capacitación y soporte técnico continuo.',
       en: 'Modernize your infrastructure: diagnostics, device setup, data migration, staff training and ongoing technical support.',
     },
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'infraDiagnostic',
       'deviceSetup',
@@ -311,7 +311,7 @@ export const PROJECT_TYPES: ProjectType[] = [
     ],
   },
   {
-    key: 'aiIntegration',
+    key: 'ai',
     base: 10000,
     label: { es: 'Integración con IA', en: 'AI Integration' },
     icon: 'bot',
@@ -319,7 +319,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Integra inteligencia artificial: chatbots para WhatsApp y web, automatización de procesos, análisis de datos, asistentes virtuales y procesamiento de documentos.',
       en: 'Integrate artificial intelligence: WhatsApp and web chatbots, process automation, data analysis, virtual assistants and document processing.',
     },
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'whatsappBot',
       'webChatbot',
@@ -340,7 +340,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Análisis técnico, diseño de arquitectura, revisión de código y roadmap tecnológico para tu proyecto.',
       en: 'Technical analysis, architecture design, code review and technology roadmap for your project.',
     },
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'techAudit',
       'archDesign',
@@ -361,7 +361,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Entrena a tu equipo en nuevas tecnologías, herramientas y procesos. Cursos presenciales o remotos, adaptados a tu stack.',
       en: 'Train your team on new technologies, tools and processes. On-site or remote courses, adapted to your stack.',
     },
-    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'needsAssessment',
       'customCurriculum',
@@ -382,7 +382,7 @@ export const PROJECT_TYPES: ProjectType[] = [
       es: 'Lleva tu sistema legacy a tecnologías modernas: refactorización de código, migración a la nube y optimización de rendimiento.',
       en: 'Bring your legacy system to modern technologies: code refactoring, cloud migration and performance optimization.',
     },
-    image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&h=320&fit=crop&auto=format&q=80',
+    image: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=280&h=140&fit=crop&auto=format&q=80',
     features: [
       'legacyAudit',
       'codeRefactor',
@@ -1243,8 +1243,6 @@ function formatPlanPrice(n: number, currency: string, lang: 'es' | 'en'): string
 }
 
 const HOURLY_RATE: Record<string, number> = { MXN: 500, USD: 30 };
-const SERVER_COST: Record<string, number> = { MXN: 3000, USD: 170 };
-
 export const PAYMENT_PLANS: PaymentPlan[] = [
   {
     key: 'fullPayment',
@@ -1333,28 +1331,6 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
     },
   },
   {
-    key: 'financing12',
-    label: { es: '12 meses', en: '12 months' },
-    description: { es: 'Financiamiento a 12 meses', en: '12-month financing' },
-    icon: 'clock',
-    calculate(total, currency) {
-      const lang: 'es' | 'en' = currency === 'USD' ? 'en' : 'es';
-      const financed = total * 1.15;
-      const monthly = financed / 12;
-      return {
-        key: this.key, label: this.label, description: this.description,
-        icon: this.icon,
-        primary: formatPlanPrice(monthly, currency, lang),
-        secondary: lang === 'es' ? '× 12 meses (+15%)' : '× 12 months (+15%)',
-        details: {
-          es: 'Pagos mensuales a 12 meses con un 15% de recargo por financiamiento.',
-          en: 'Monthly payments over 12 months with a 15% financing surcharge.',
-        },
-        totalCost: financed,
-      };
-    },
-  },
-  {
     key: 'saasMonthly',
     label: { es: 'SaaS mensual', en: 'Monthly SaaS' },
     description: { es: 'Pago mensual con mantenimiento', en: 'Monthly payment with maintenance' },
@@ -1372,28 +1348,6 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
           en: 'Monthly payment that includes development + maintenance and updates.',
         },
         totalCost: total + total * 0.15,
-      };
-    },
-  },
-  {
-    key: 'annualLicense',
-    label: { es: 'Licencia anual', en: 'Annual license' },
-    description: { es: 'Licencia + servidor mensual', en: 'License + monthly server' },
-    icon: 'server',
-    calculate(total, currency) {
-      const lang: 'es' | 'en' = currency === 'USD' ? 'en' : 'es';
-      const upfront = total * 0.60;
-      const server = SERVER_COST[currency] ?? SERVER_COST.MXN;
-      return {
-        key: this.key, label: this.label, description: this.description,
-        icon: this.icon,
-        primary: formatPlanPrice(upfront, currency, lang),
-        secondary: `+ ${formatPlanPrice(server, currency, lang)}/${lang === 'es' ? 'mes servidor' : 'mo server'}`,
-        details: {
-          es: `60% del costo como licencia inicial + ${formatPlanPrice(server, currency, lang)}/mes por servidor y soporte.`,
-          en: `60% of the cost as initial license + ${formatPlanPrice(server, currency, lang)}/mo for server and support.`,
-        },
-        totalCost: upfront + server * 12,
       };
     },
   },
@@ -1416,27 +1370,6 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
           en: `Approximately ${hours} development hours at ${formatPlanPrice(rate, currency, lang)} per hour.`,
         },
         totalCost: hours * rate,
-      };
-    },
-  },
-  {
-    key: 'payroll',
-    label: { es: 'Nómina', en: 'Payroll-style' },
-    description: { es: 'Equivalente a nómina mensual', en: 'Monthly payroll equivalent' },
-    icon: 'users',
-    calculate(total, currency) {
-      const lang: 'es' | 'en' = currency === 'USD' ? 'en' : 'es';
-      const monthly = total / 6;
-      return {
-        key: this.key, label: this.label, description: this.description,
-        icon: this.icon,
-        primary: formatPlanPrice(monthly, currency, lang) + (lang === 'es' ? '/mes' : '/mo'),
-        secondary: lang === 'es' ? '× 6 meses' : '× 6 months',
-        details: {
-          es: 'Paga como si fuera un salario mensual durante 6 meses de desarrollo dedicado.',
-          en: 'Pay as a monthly salary over 6 months of dedicated development.',
-        },
-        totalCost: total,
       };
     },
   },

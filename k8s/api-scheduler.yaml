@@ -43,11 +43,31 @@ spec:
               value: "https://api.joledev.com"
             - name: CORS_ORIGIN
               value: "https://joledev.com"
-            - name: RESEND_API_KEY
+            - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:
                   name: joledev-secrets
-                  key: RESEND_API_KEY
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: SMTP_USER
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: SMTP_PASS
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: SMTP_FROM
             - name: CONTACT_EMAIL
               valueFrom:
                 secretKeyRef:
@@ -58,6 +78,11 @@ spec:
                 secretKeyRef:
                   name: joledev-secrets
                   key: SCHEDULER_ADMIN_PASSWORD
+            - name: TURNSTILE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: joledev-secrets
+                  key: TURNSTILE_SECRET_KEY
           volumeMounts:
             - name: data
               mountPath: /data

@@ -83,6 +83,12 @@ func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verify Turnstile CAPTCHA
+	if err := services.VerifyTurnstile(req.TurnstileToken, ip); err != nil {
+		http.Error(w, `{"success":false,"message":"`+err.Error()+`"}`, http.StatusForbidden)
+		return
+	}
+
 	// Validate required fields
 	clientName := strings.TrimSpace(req.ClientName)
 	if clientName == "" || len(clientName) > 200 {

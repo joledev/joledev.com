@@ -18,9 +18,10 @@
   interface Props {
     lang: 'es' | 'en';
     apiUrl?: string;
+    turnstileSiteKey?: string;
   }
 
-  let { lang, apiUrl = '' }: Props = $props();
+  let { lang, apiUrl = '', turnstileSiteKey = '' }: Props = $props();
 
   const TOTAL_STEPS = 7;
   let currentStep = $state(1);
@@ -32,6 +33,13 @@
   let currentState = $state('');
   let timeline = $state('');
   let currency = $state('');
+
+  // Panel ref for scroll-to-top on step change
+  let panelEl = $state<HTMLElement | null>(null);
+
+  function scrollToPanel() {
+    panelEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   // Step 1 hover/click detail
   let hoveredProjectKey = $state<string | null>(null);
@@ -68,11 +76,15 @@
   let formErrors = $state<Record<string, string>>({});
   let fieldTouched = $state<Record<string, boolean>>({});
 
+  const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+
   function validateField(field: string) {
     const errors = { ...formErrors };
     if (field === 'name') {
       if (!contactName.trim()) {
         errors.name = lang === 'es' ? 'El nombre es requerido' : 'Name is required';
+      } else if (contactName.trim().length > 200) {
+        errors.name = lang === 'es' ? 'Máximo 200 caracteres' : 'Maximum 200 characters';
       } else {
         delete errors.name;
       }
@@ -80,7 +92,7 @@
     if (field === 'email') {
       if (!contactEmail.trim()) {
         errors.email = lang === 'es' ? 'El email es requerido' : 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      } else if (!EMAIL_RE.test(contactEmail)) {
         errors.email = lang === 'es' ? 'Email no válido' : 'Invalid email';
       } else {
         delete errors.email;
@@ -98,6 +110,41 @@
   let submitting = $state(false);
   let submitted = $state(false);
   let submitError = $state('');
+
+  // Turnstile CAPTCHA
+  let turnstileToken = $state('');
+  let turnstileWidgetId = $state<string | null>(null);
+
+  function initTurnstile(container: HTMLElement) {
+    if (!turnstileSiteKey || turnstileWidgetId) return;
+    if (!(window as any).turnstile) return;
+    turnstileWidgetId = (window as any).turnstile.render(container, {
+      sitekey: turnstileSiteKey,
+      callback: (token: string) => { turnstileToken = token; },
+      'expired-callback': () => { turnstileToken = ''; },
+      'error-callback': () => { turnstileToken = ''; },
+      theme: 'auto',
+      size: 'flexible',
+    });
+  }
+
+  function resetTurnstile() {
+    if (turnstileWidgetId && (window as any).turnstile) {
+      (window as any).turnstile.reset(turnstileWidgetId);
+      turnstileToken = '';
+    }
+  }
+
+  // Load Turnstile script dynamically
+  $effect(() => {
+    if (!turnstileSiteKey) return;
+    if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  });
 
   // Derived
   let availableFeatures = $derived(() => {
@@ -188,11 +235,17 @@
   }
 
   function nextStep() {
-    if (canNext() && currentStep < TOTAL_STEPS) currentStep++;
+    if (canNext() && currentStep < TOTAL_STEPS) {
+      currentStep++;
+      scrollToPanel();
+    }
   }
 
   function prevStep() {
-    if (currentStep > 1) currentStep--;
+    if (currentStep > 1) {
+      currentStep--;
+      scrollToPanel();
+    }
   }
 
   function formatPrice(n: number, cur: string): string {
@@ -216,10 +269,12 @@
     const errors: Record<string, string> = {};
     if (!contactName.trim()) {
       errors.name = lang === 'es' ? 'El nombre es requerido' : 'Name is required';
+    } else if (contactName.trim().length > 200) {
+      errors.name = lang === 'es' ? 'Máximo 200 caracteres' : 'Maximum 200 characters';
     }
     if (!contactEmail.trim()) {
       errors.email = lang === 'es' ? 'El email es requerido' : 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    } else if (!EMAIL_RE.test(contactEmail)) {
       errors.email = lang === 'es' ? 'Email no válido' : 'Invalid email';
     }
     formErrors = errors;
@@ -254,6 +309,7 @@
         notes: contactNotes.trim(),
       },
       lang,
+      turnstileToken,
     };
 
     try {
@@ -276,6 +332,7 @@
           ? 'Hubo un error al enviar. Por favor intenta de nuevo.'
           : 'There was an error submitting. Please try again.';
       toast.error(submitError);
+      resetTurnstile();
     } finally {
       submitting = false;
     }
@@ -385,6 +442,19 @@
     headphones: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
     mic: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
     chevronDown: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+    compass: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+    graduationCap: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>',
+    arrowUpRight: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>',
+    book: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    video: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+    map: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+    checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    calendarRange: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>',
+    city: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="7" height="16"/><rect x="10" y="2" width="7" height="20"/><rect x="19" y="9" width="4" height="13"/><line x1="4" y1="10" x2="4" y2="10.01"/><line x1="4" y1="14" x2="4" y2="14.01"/><line x1="13" y1="6" x2="13" y2="6.01"/><line x1="13" y1="10" x2="13" y2="10.01"/><line x1="13" y1="14" x2="13" y2="14.01"/><line x1="21" y1="13" x2="21" y2="13.01"/></svg>',
+    user: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    plus: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    refresh: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+    shuffle: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
   };
 </script>
 
@@ -392,18 +462,24 @@
   <!-- Success screen -->
   <div class="quoter-panel">
     <div class="success-screen">
+      <div class="success-pulse"></div>
       <div class="success-check">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
       <h2 class="success-title">{labels.successTitle}</h2>
       <p class="success-msg">{labels.successMsg}</p>
-      <button class="btn-secondary" onclick={() => { submitted = false; currentStep = 1; selectedProjectTypes = []; selectedFeatures = []; businessSize = ''; currentState = ''; timeline = ''; currency = ''; contactName = ''; contactEmail = ''; contactPhone = ''; contactCompany = ''; contactNotes = ''; }} type="button">
-        {labels.newQuote}
-      </button>
+      <div class="success-actions">
+        <a class="quoter-nav-btn next" href={lang === 'es' ? '/es/agendar/' : '/en/schedule/'}>
+          {labels.schedule}
+        </a>
+        <button class="quoter-nav-btn back" onclick={() => { submitted = false; currentStep = 1; selectedProjectTypes = []; selectedFeatures = []; businessSize = ''; currentState = ''; timeline = ''; currency = ''; contactName = ''; contactEmail = ''; contactPhone = ''; contactCompany = ''; contactNotes = ''; }} type="button">
+          {labels.newQuote}
+        </button>
+      </div>
     </div>
   </div>
 {:else}
-  <div class="quoter-panel">
+  <div class="quoter-panel" bind:this={panelEl}>
     <!-- Progress bar -->
     <div class="progress-bar">
       <div class="progress-fill" style="width: {(currentStep / TOTAL_STEPS) * 100}%"></div>
@@ -420,10 +496,11 @@
     {/if}
 
     <!-- Step content -->
+    {#key currentStep}
     <div class="step-content">
       {#if currentStep === 1}
         <div class="option-grid">
-          {#each PROJECT_TYPES as pt}
+          {#each PROJECT_TYPES as pt, i}
             <button
               class="option-card"
               class:selected={selectedProjectTypes.includes(pt.key)}
@@ -434,6 +511,7 @@
               onfocus={() => handleProjectEnter(pt.key)}
               type="button"
               aria-pressed={selectedProjectTypes.includes(pt.key)}
+              style="animation-delay: {i * 30}ms"
             >
               <span class="option-icon">{@html icons[pt.icon] ?? ''}</span>
               <span class="option-label">{pt.label[lang]}</span>
@@ -449,7 +527,7 @@
                       class="option-detail-img"
                       src={pt.image}
                       alt={pt.label[lang]}
-                      width="600"
+                      width="280"
                       height="140"
                       loading="lazy"
                     />
@@ -525,13 +603,14 @@
 
       {:else if currentStep === 3}
         <div class="option-grid cols-2">
-          {#each BUSINESS_SIZES as size}
+          {#each BUSINESS_SIZES as size, i}
             <button
               class="option-card"
               class:selected={businessSize === size.key}
               onclick={() => (businessSize = size.key)}
               type="button"
               aria-pressed={businessSize === size.key}
+              style="animation-delay: {i * 30}ms"
             >
               <span class="option-label">{size.label[lang]}</span>
             </button>
@@ -540,13 +619,14 @@
 
       {:else if currentStep === 4}
         <div class="option-grid cols-3">
-          {#each CURRENT_STATES as state}
+          {#each CURRENT_STATES as state, i}
             <button
               class="option-card"
               class:selected={currentState === state.key}
               onclick={() => (currentState = state.key)}
               type="button"
               aria-pressed={currentState === state.key}
+              style="animation-delay: {i * 30}ms"
             >
               <span class="option-label">{state.label[lang]}</span>
             </button>
@@ -555,13 +635,14 @@
 
       {:else if currentStep === 5}
         <div class="option-grid cols-2">
-          {#each TIMELINES as tl}
+          {#each TIMELINES as tl, i}
             <button
               class="option-card"
               class:selected={timeline === tl.key}
               onclick={() => (timeline = tl.key)}
               type="button"
               aria-pressed={timeline === tl.key}
+              style="animation-delay: {i * 30}ms"
             >
               <span class="option-label">{tl.label[lang]}</span>
             </button>
@@ -570,13 +651,14 @@
 
       {:else if currentStep === 6}
         <div class="option-grid cols-2">
-          {#each CURRENCIES as cur}
+          {#each CURRENCIES as cur, i}
             <button
               class="option-card currency-card"
               class:selected={currency === cur.key}
               onclick={() => (currency = cur.key)}
               type="button"
               aria-pressed={currency === cur.key}
+              style="animation-delay: {i * 30}ms"
             >
               <span class="currency-flag">{cur.flag}</span>
               <span class="option-label">{cur.label}</span>
@@ -588,12 +670,13 @@
       {:else if currentStep === 7}
         {@const result = quoteResult()}
         {@const plans = paymentPlans()}
+        {@const surchargeMultiplier = includeSourceCode ? 1 + SOURCE_CODE_SURCHARGE : 1}
         <div class="result-section">
           {#if result}
             <div class="estimate-display">
               <p class="estimate-label">{labels.baseBudget}</p>
               <p class="estimate-range">
-                {formatPrice(result.min, result.currency)} — {formatPrice(result.max, result.currency)}
+                {formatPrice(result.min * surchargeMultiplier, result.currency)} — {formatPrice(result.max * surchargeMultiplier, result.currency)}
               </p>
             </div>
 
@@ -607,13 +690,14 @@
 
             <h3 class="plans-title">{labels.choosePlan}</h3>
             <div class="plans-grid">
-              {#each plans as plan}
+              {#each plans as plan, i}
                 <button
                   class="plan-card"
                   class:selected={selectedPlanKey === plan.key}
                   onclick={() => (selectedPlanKey = plan.key)}
                   type="button"
                   aria-pressed={selectedPlanKey === plan.key}
+                  style="animation-delay: {i * 40}ms"
                 >
                   {#if plan.badge}
                     <span class="plan-badge">{plan.badge[lang]}</span>
@@ -652,72 +736,85 @@
 
           <hr class="divider" />
 
-          <h3 class="contact-title">{labels.contactTitle}</h3>
+          <div class="contact-section">
+            <h3 class="contact-title">{labels.contactTitle}</h3>
 
-          <div class="form-grid">
-            <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && contactName.trim()} class:field-invalid={fieldTouched.name && formErrors.name}>
-              <label for="q-name">{labels.name} *</label>
-              <div class="input-wrapper">
-                <input id="q-name" type="text" bind:value={contactName} required onblur={() => { fieldTouched.name = true; validateField('name'); }} />
-                {#if fieldTouched.name && !formErrors.name && contactName.trim()}
-                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                {/if}
+            <div class="form-grid">
+              <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && contactName.trim()} class:field-invalid={fieldTouched.name && formErrors.name}>
+                <label for="q-name">{labels.name} *</label>
+                <div class="input-wrapper">
+                  <input id="q-name" type="text" bind:value={contactName} required aria-required="true" maxlength={200} onblur={() => { fieldTouched.name = true; validateField('name'); }} />
+                  {#if fieldTouched.name && !formErrors.name && contactName.trim()}
+                    <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  {/if}
+                </div>
+                {#if fieldTouched.name && formErrors.name}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</p>{/if}
               </div>
-              {#if fieldTouched.name && formErrors.name}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</p>{/if}
-            </div>
-            <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && contactEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email}>
-              <label for="q-email">{labels.email} *</label>
-              <div class="input-wrapper">
-                <input id="q-email" type="email" bind:value={contactEmail} required onblur={() => { fieldTouched.email = true; validateField('email'); }} />
-                {#if fieldTouched.email && !formErrors.email && contactEmail.trim()}
-                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                {/if}
+              <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && contactEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email}>
+                <label for="q-email">{labels.email} *</label>
+                <div class="input-wrapper">
+                  <input id="q-email" type="email" bind:value={contactEmail} required aria-required="true" maxlength={254} onblur={() => { fieldTouched.email = true; validateField('email'); }} />
+                  {#if fieldTouched.email && !formErrors.email && contactEmail.trim()}
+                    <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  {/if}
+                </div>
+                {#if fieldTouched.email && formErrors.email}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</p>{/if}
               </div>
-              {#if fieldTouched.email && formErrors.email}<p class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</p>{/if}
+              <div class="form-field">
+                <label for="q-phone">{labels.phone} <span class="optional-hint">({lang === 'es' ? 'opcional' : 'optional'})</span></label>
+                <input id="q-phone" type="tel" bind:value={contactPhone} maxlength={30} />
+              </div>
+              <div class="form-field">
+                <label for="q-company">{labels.company} <span class="optional-hint">({lang === 'es' ? 'opcional' : 'optional'})</span></label>
+                <input id="q-company" type="text" bind:value={contactCompany} maxlength={200} />
+              </div>
+              <div class="form-field full-width">
+                <label for="q-notes">{labels.notes} <span class="optional-hint">({lang === 'es' ? 'opcional' : 'optional'})</span></label>
+                <textarea id="q-notes" rows="3" bind:value={contactNotes} maxlength={2000}></textarea>
+              </div>
+              {#if turnstileSiteKey}
+                <div class="full-width" use:initTurnstile></div>
+              {/if}
             </div>
-            <div class="form-field">
-              <label for="q-phone">{labels.phone}</label>
-              <input id="q-phone" type="tel" bind:value={contactPhone} />
-            </div>
-            <div class="form-field">
-              <label for="q-company">{labels.company}</label>
-              <input id="q-company" type="text" bind:value={contactCompany} />
-            </div>
-            <div class="form-field full-width">
-              <label for="q-notes">{labels.notes}</label>
-              <textarea id="q-notes" rows="3" bind:value={contactNotes}></textarea>
-            </div>
-          </div>
 
-          {#if submitError}
-            <p class="submit-error">{submitError}</p>
-          {/if}
+            {#if submitError}
+              <p class="submit-error">{submitError}</p>
+            {/if}
 
-          <div class="submit-actions">
-            <button class="btn-primary" onclick={submitQuote} disabled={submitting} type="button">
-              {#if submitting}<span class="btn-spinner"></span>{/if}
-              {submitting ? labels.sending : labels.send}
-            </button>
+            <div class="submit-actions">
+              <button class="quoter-submit-btn" onclick={submitQuote} disabled={submitting} type="button">
+                {#if submitting}<span class="btn-spinner"></span>{/if}
+                {submitting ? labels.sending : labels.send}
+              </button>
+            </div>
           </div>
         </div>
       {/if}
     </div>
+    {/key}
 
     <!-- Navigation -->
     {#if currentStep < 7}
       <div class="step-nav">
         {#if currentStep > 1}
-          <button class="btn-secondary" onclick={prevStep} type="button">{labels.prev}</button>
+          <button class="quoter-nav-btn back" onclick={prevStep} type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            {labels.prev}
+          </button>
         {:else}
           <div></div>
         {/if}
-        <button class="btn-primary" onclick={nextStep} disabled={!canNext()} type="button">
+        <button class="quoter-nav-btn next" onclick={nextStep} disabled={!canNext()} type="button">
           {labels.next}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
     {:else}
       <div class="step-nav">
-        <button class="btn-secondary" onclick={prevStep} type="button">{labels.prev}</button>
+        <button class="quoter-nav-btn back" onclick={prevStep} type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          {labels.prev}
+        </button>
         <div></div>
       </div>
     {/if}
@@ -725,22 +822,25 @@
 {/if}
 
 <style>
+  /* ── Container ─────────────────────────────────────────── */
   .quoter-panel {
     background: var(--color-glass);
     backdrop-filter: blur(12px);
     border: 1px solid var(--color-glass-border);
-    border-radius: 1.25rem;
+    border-radius: 1.5rem;
     padding: 2rem;
     max-width: 820px;
     margin: 0 auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
   }
 
-  @media (max-width: 767px) {
-    .quoter-panel { padding: 1.25rem; }
+  :global([data-theme="dark"]) .quoter-panel {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   }
 
+  /* ── Progress Bar ──────────────────────────────────────── */
   .progress-bar {
-    height: 4px;
+    height: 6px;
     background: var(--color-border);
     border-radius: 9999px;
     overflow: hidden;
@@ -749,83 +849,114 @@
 
   .progress-fill {
     height: 100%;
-    background: var(--color-accent-primary);
+    background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-light));
     border-radius: 9999px;
-    transition: width 0.3s ease;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
   }
 
   .step-indicator {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
     color: var(--color-text-muted);
-    text-align: right;
-    margin-bottom: 1.5rem;
+    text-align: center;
+    margin-bottom: 1.75rem;
   }
 
+  /* ── Step Title / Hint ─────────────────────────────────── */
   .step-title {
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 1.375rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     color: var(--color-text-primary);
+    text-align: center;
   }
 
   .step-hint {
     font-size: 0.8125rem;
     color: var(--color-text-muted);
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    text-align: center;
   }
 
   .step-content {
     min-height: 200px;
     margin-bottom: 1.5rem;
+    animation: fadeSlideUp 0.3s ease-out;
   }
 
-  /* Option grid */
+  /* ── Option Grid ───────────────────────────────────────── */
   .option-grid {
     display: grid;
-    gap: 0.75rem;
-    grid-template-columns: repeat(2, 1fr);
-    align-items: start;
+    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
   }
 
+  .option-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
   .option-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 
-  @media (max-width: 640px) {
+  @media (max-width: 767px) {
+    .option-grid { grid-template-columns: repeat(2, 1fr); }
+    .option-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
     .option-grid { grid-template-columns: 1fr; }
-    .option-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .option-grid.cols-2 { grid-template-columns: 1fr; }
     .option-grid.cols-3 { grid-template-columns: 1fr; }
   }
 
+  /* ── Option Cards (Steps 1, 3-6) ──────────────────────── */
   .option-card {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 1.25rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background: var(--color-bg-elevated);
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg-primary);
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--font-sans);
     text-align: center;
+    animation: fadeSlideUp 0.35s ease-out both;
   }
 
   .option-card:hover {
     border-color: var(--color-accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
   }
 
   .option-card.selected {
     border-color: var(--color-accent-primary);
     background: var(--color-accent-subtle);
+    box-shadow: inset 0 0 0 1px var(--color-accent-primary);
   }
 
+  /* ── Icon Containers ───────────────────────────────────── */
   .option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: var(--color-accent-subtle);
     color: var(--color-accent-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .option-icon :global(svg) { width: 24px; height: 24px; }
+  .option-card.selected .option-icon {
+    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-light));
+    color: #fff;
+  }
+
+  .option-icon :global(svg) { width: 22px; height: 22px; }
 
   .option-label {
     font-size: 0.875rem;
@@ -840,12 +971,12 @@
     color: var(--color-accent-primary);
   }
 
-  /* Currency card extras */
+  /* ── Currency Card Extras ──────────────────────────────── */
   .currency-card { padding: 2rem 1.5rem; }
   .currency-flag { font-size: 2rem; }
   .currency-name { font-size: 0.75rem; color: var(--color-text-muted); }
 
-  /* ── Step 2: Feature groups & cards ───────────────────── */
+  /* ── Step 2: Feature Groups & Cards ────────────────────── */
   .features-list {
     display: flex;
     flex-direction: column;
@@ -853,8 +984,8 @@
   }
 
   .feature-group {
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
     overflow: hidden;
   }
 
@@ -921,8 +1052,8 @@
   .feature-cards-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.625rem;
-    padding: 0.75rem;
+    gap: 0.75rem;
+    padding: 1rem;
     background: transparent;
   }
 
@@ -938,12 +1069,12 @@
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.875rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
     background: var(--color-glass);
     backdrop-filter: blur(8px);
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--font-sans);
     text-align: left;
   }
@@ -1021,44 +1152,60 @@
     overflow: hidden;
   }
 
-  /* Result / Step 7 */
+  /* ── Step 7: Result Section ────────────────────────────── */
   .estimate-display {
+    position: relative;
     text-align: center;
-    padding: 1rem 0 0.5rem;
+    padding: 1.75rem 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg-primary);
+    overflow: hidden;
+  }
+
+  .estimate-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-light));
   }
 
   .estimate-label {
     font-size: 0.8125rem;
     color: var(--color-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
   }
 
   .estimate-range {
     font-family: var(--font-display);
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--color-accent-primary);
   }
 
-  /* Source code toggle */
+  /* ── Source Code Toggle ────────────────────────────────── */
   .source-code-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background: var(--color-bg-elevated);
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg-primary);
     cursor: pointer;
     margin-top: 1rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .source-code-toggle:hover {
     border-color: var(--color-accent-light);
+    background: var(--color-accent-subtle);
   }
 
   .source-code-toggle input[type="checkbox"] {
@@ -1079,13 +1226,14 @@
     color: var(--color-text-muted);
   }
 
-  /* Plans section */
+  /* ── Plans Section ─────────────────────────────────────── */
   .plans-title {
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 1rem;
     margin-bottom: 1rem;
     color: var(--color-text-primary);
+    text-align: center;
   }
 
   .plans-grid {
@@ -1108,13 +1256,14 @@
     align-items: center;
     gap: 0.25rem;
     padding: 1rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background: var(--color-bg-elevated);
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg-primary);
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--font-sans);
     text-align: center;
+    animation: fadeSlideUp 0.35s ease-out both;
   }
 
   .plan-card:hover {
@@ -1175,7 +1324,7 @@
     margin-top: 0.125rem;
   }
 
-  /* Collapsible includes */
+  /* ── Collapsible Includes ──────────────────────────────── */
   .includes-toggle {
     display: flex;
     align-items: center;
@@ -1229,15 +1378,25 @@
   .divider {
     border: none;
     border-top: 1px solid var(--color-border);
-    margin: 1.5rem 0;
+    margin: 2rem 0;
+  }
+
+  /* ── Contact Section ───────────────────────────────────── */
+  .contact-section {
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg-primary);
+    padding: 1.5rem;
+    animation: fadeSlideUp 0.35s ease-out both;
   }
 
   .contact-title {
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-weight: 700;
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
     color: var(--color-text-primary);
+    text-align: center;
   }
 
   .form-grid {
@@ -1259,11 +1418,17 @@
     color: var(--color-text-secondary);
   }
 
+  .optional-hint {
+    font-weight: 400;
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+
   .form-field input,
   .form-field textarea {
     padding: 0.75rem 1rem;
     border: 1.5px solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     background: var(--color-bg-elevated);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
@@ -1281,6 +1446,10 @@
 
   .input-wrapper {
     position: relative;
+  }
+
+  .input-wrapper input {
+    width: 100%;
   }
 
   .field-icon {
@@ -1318,37 +1487,159 @@
     margin-top: 1.5rem;
   }
 
-  /* Navigation */
+  /* ── Submit Button ─────────────────────────────────────── */
+  .quoter-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem 2rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: var(--color-accent-primary);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  }
+
+  .quoter-submit-btn:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  }
+
+  .quoter-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* ── Navigation Buttons ────────────────────────────────── */
   .step-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 0.5rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--color-border);
   }
 
-  /* Success */
+  .quoter-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .quoter-nav-btn.back {
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+
+  .quoter-nav-btn.back:hover {
+    border-color: var(--color-accent-light);
+    color: var(--color-accent-primary);
+    transform: translateX(-2px);
+  }
+
+  .quoter-nav-btn.next {
+    background: var(--color-accent-primary);
+    border: none;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  }
+
+  .quoter-nav-btn.next:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  }
+
+  .quoter-nav-btn.next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .quoter-nav-btn :global(svg) {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* ── Success Screen ────────────────────────────────────── */
   .success-screen {
+    position: relative;
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 3.5rem 1.5rem;
+  }
+
+  .success-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    animation: successPulse 2s ease-in-out infinite;
+    pointer-events: none;
   }
 
   .success-check {
+    position: relative;
     color: var(--color-success);
     margin-bottom: 1.5rem;
     animation: popIn 0.4s ease-out;
   }
 
   .success-title {
+    position: relative;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
   }
 
   .success-msg {
+    position: relative;
     color: var(--color-text-secondary);
     margin-bottom: 2rem;
+  }
+
+  .success-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .success-actions .quoter-nav-btn {
+    text-decoration: none;
+  }
+
+  /* ── Animations ────────────────────────────────────────── */
+  @keyframes fadeSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes popIn {
@@ -1357,22 +1648,72 @@
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ── Step 1: Inline detail inside option-card ────────── */
+  @keyframes successPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.2; }
+  }
+
+  @keyframes detailFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step-content,
+    .option-card,
+    .plan-card,
+    .contact-section,
+    .success-pulse,
+    .success-check,
+    .progress-fill {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    .option-card:hover,
+    .feature-card:hover,
+    .plan-card:hover,
+    .quoter-nav-btn:hover {
+      transform: none !important;
+    }
+  }
+
+  /* ── Step 1: Floating Detail Tooltip (desktop only) ──────── */
   .option-card.expanded {
-    gap: 0.75rem;
+    z-index: 10;
   }
 
   .option-detail {
-    width: 100%;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 280px;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    animation: detailFadeIn 0.2s ease-out;
+    padding: 0.75rem;
+    background: var(--color-bg-primary);
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    animation: detailFadeIn 0.15s ease-out;
+    pointer-events: none;
+  }
+
+  :global([data-theme="dark"]) .option-detail {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Right-align tooltip for cards in the last column */
+  .option-grid > :nth-child(3n) .option-detail {
+    left: auto;
+    right: 0;
   }
 
   .option-detail-img {
     width: 100%;
-    height: 140px;
+    height: 120px;
     object-fit: cover;
     border-radius: 0.5rem;
   }
@@ -1380,13 +1721,50 @@
   .option-detail-desc {
     font-size: 0.8125rem;
     font-weight: 400;
-    line-height: 1.55;
+    line-height: 1.5;
     color: var(--color-text-secondary);
     text-align: left;
   }
 
-  @keyframes detailFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  /* Hide detail tooltip on mobile */
+  @media (max-width: 767px) {
+    .option-detail {
+      display: none;
+    }
+  }
+
+  /* ── Mobile Responsive ─────────────────────────────────── */
+  @media (max-width: 767px) {
+    .quoter-panel {
+      padding: 1.25rem;
+    }
+
+    .step-title {
+      font-size: 1.125rem;
+    }
+
+    .estimate-range {
+      font-size: 1.5rem;
+    }
+
+    .contact-section {
+      padding: 1.25rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .plans-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .step-nav {
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+    }
+
+    .quoter-nav-btn {
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>

@@ -1,60 +1,73 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
+	"crypto/tls"
 	"fmt"
-	"net/http"
+	"net/smtp"
 	"os"
 	"strings"
 
 	"github.com/joledev/api-scheduler/models"
 )
 
-type resendPayload struct {
-	From    string   `json:"from"`
-	To      []string `json:"to"`
-	Subject string   `json:"subject"`
-	HTML    string   `json:"html"`
-}
-
 func sendEmail(to, subject, html string) error {
-	apiKey := os.Getenv("RESEND_API_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("RESEND_API_KEY not set")
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASS")
+	from := os.Getenv("SMTP_FROM")
+
+	if host == "" || user == "" || pass == "" {
+		return fmt.Errorf("SMTP not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)")
+	}
+	if port == "" {
+		port = "465"
+	}
+	if from == "" {
+		from = user
 	}
 
-	payload := resendPayload{
-		From:    "JoleDev <noreply@joledev.com>",
-		To:      []string{to},
-		Subject: subject,
-		HTML:    html,
-	}
+	// Build MIME message
+	msg := "From: " + from + "\r\n" +
+		"To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=UTF-8\r\n" +
+		"\r\n" + html
 
-	body, err := json.Marshal(payload)
+	// Port 465 uses implicit TLS (SMTPS)
+	conn, err := tls.Dial("tcp", host+":"+port, &tls.Config{ServerName: host})
 	if err != nil {
+		return fmt.Errorf("SMTP TLS connection failed: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return fmt.Errorf("SMTP client failed: %w", err)
+	}
+	defer client.Close()
+
+	if err := client.Auth(smtp.PlainAuth("", user, pass, host)); err != nil {
+		return fmt.Errorf("SMTP auth failed: %w", err)
+	}
+	if err := client.Mail(user); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(body))
+	w, err := client.Data()
 	if err != nil {
 		return err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
+	if _, err := w.Write([]byte(msg)); err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("resend API returned status %d", resp.StatusCode)
+	if err := w.Close(); err != nil {
+		return err
 	}
-
-	return nil
+	return client.Quit()
 }
 
 func getAPIBaseURL() string {
@@ -134,7 +147,7 @@ func meetingTypeLabel(mt, lang string) string {
 func SendAdminPendingNotification(b *models.Booking) error {
 	contactEmail := os.Getenv("CONTACT_EMAIL")
 	if contactEmail == "" {
-		contactEmail = "joel@joledev.com"
+		contactEmail = "contacto@joledev.com"
 	}
 
 	baseURL := getAPIBaseURL()
@@ -251,7 +264,7 @@ func SendBookingConfirmation(b *models.Booking) error {
 🕐 <strong>Time:</strong> %s<br>
 📍 <strong>Type:</strong> %s</p>
 %s
-<p>If you need to reschedule, contact me at joel@joledev.com.</p>
+<p>If you need to reschedule, contact me at contacto@joledev.com.</p>
 <p>Best regards,<br>Joel López Verdugo<br>JoleDev</p>`,
 			b.ClientName, dateStr, timeStr, mtLabel, locationLine)
 	} else {
@@ -270,7 +283,7 @@ func SendBookingConfirmation(b *models.Booking) error {
 🕐 <strong>Hora:</strong> %s<br>
 📍 <strong>Tipo:</strong> %s</p>
 %s
-<p>Si necesitas reprogramar, contáctame a joel@joledev.com.</p>
+<p>Si necesitas reprogramar, contáctame a contacto@joledev.com.</p>
 <p>Saludos,<br>Joel López Verdugo<br>JoleDev</p>`,
 			b.ClientName, dateStr, timeStr, mtLabel, locationLine)
 	}

@@ -33,6 +33,7 @@ type BookingRequest struct {
 	ClientTimezone string `json:"clientTimezone"`
 	Notes          string `json:"notes"`
 	Lang           string `json:"lang"`
+	TurnstileToken string `json:"turnstileToken"`
 }
 
 type BookingResponse struct {

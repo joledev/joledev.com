@@ -1,72 +1,82 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
+	"crypto/tls"
 	"fmt"
-	"net/http"
+	"net/smtp"
 	"os"
 	"strings"
 
 	"github.com/joledev/api-quoter/models"
 )
 
-type resendPayload struct {
-	From    string `json:"from"`
-	To      []string `json:"to"`
-	Subject string `json:"subject"`
-	HTML    string `json:"html"`
-}
-
 func sendEmail(to, subject, html string) error {
-	apiKey := os.Getenv("RESEND_API_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("RESEND_API_KEY not set")
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASS")
+	from := os.Getenv("SMTP_FROM")
+
+	if host == "" || user == "" || pass == "" {
+		return fmt.Errorf("SMTP not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)")
+	}
+	if port == "" {
+		port = "465"
+	}
+	if from == "" {
+		from = user
 	}
 
-	payload := resendPayload{
-		From:    "JoleDev <noreply@joledev.com>",
-		To:      []string{to},
-		Subject: subject,
-		HTML:    html,
-	}
+	// Build MIME message
+	msg := "From: " + from + "\r\n" +
+		"To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=UTF-8\r\n" +
+		"\r\n" + html
 
-	body, err := json.Marshal(payload)
+	// Port 465 uses implicit TLS (SMTPS)
+	conn, err := tls.Dial("tcp", host+":"+port, &tls.Config{ServerName: host})
 	if err != nil {
+		return fmt.Errorf("SMTP TLS connection failed: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return fmt.Errorf("SMTP client failed: %w", err)
+	}
+	defer client.Close()
+
+	if err := client.Auth(smtp.PlainAuth("", user, pass, host)); err != nil {
+		return fmt.Errorf("SMTP auth failed: %w", err)
+	}
+	if err := client.Mail(user); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(body))
+	w, err := client.Data()
 	if err != nil {
 		return err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
+	if _, err := w.Write([]byte(msg)); err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("resend API returned status %d", resp.StatusCode)
+	if err := w.Close(); err != nil {
+		return err
 	}
-
-	return nil
+	return client.Quit()
 }
 
 var planLabels = map[string]map[string]string{
-	"fullPayment":   {"es": "Pago completo (-10%)", "en": "Full payment (-10%)"},
-	"splitPayment":  {"es": "50% inicio / 50% entrega", "en": "50% upfront / 50% delivery"},
-	"msi3":          {"es": "3 meses sin intereses", "en": "3 interest-free installments"},
-	"msi6":          {"es": "6 meses sin intereses", "en": "6 interest-free installments"},
-	"financing12":   {"es": "Financiamiento a 12 meses", "en": "12-month financing"},
-	"saasMonthly":   {"es": "SaaS mensual", "en": "Monthly SaaS"},
-	"annualLicense": {"es": "Licencia anual + servidor", "en": "Annual license + server"},
-	"timeRetainer":  {"es": "Retainer por horas", "en": "Hourly retainer"},
-	"payroll":       {"es": "Equivalente a nómina", "en": "Payroll-style"},
+	"fullPayment":  {"es": "Pago completo (-10%)", "en": "Full payment (-10%)"},
+	"splitPayment": {"es": "50% inicio / 50% entrega", "en": "50% upfront / 50% delivery"},
+	"msi3":         {"es": "3 meses sin intereses", "en": "3 interest-free installments"},
+	"msi6":         {"es": "6 meses sin intereses", "en": "6 interest-free installments"},
+	"saasMonthly":  {"es": "SaaS mensual", "en": "Monthly SaaS"},
+	"timeRetainer": {"es": "Retainer por horas", "en": "Hourly retainer"},
 }
 
 func getPlanLabel(key, lang string) string {
@@ -101,7 +111,7 @@ func formatCurrency(amount int, currency string) string {
 func SendQuoteNotification(q *models.QuoteRequest, quoteID string) error {
 	contactEmail := os.Getenv("CONTACT_EMAIL")
 	if contactEmail == "" {
-		contactEmail = "joel@joledev.com"
+		contactEmail = "contacto@joledev.com"
 	}
 
 	projectTypes := strings.Join(q.ProjectTypes, ", ")
@@ -151,7 +161,7 @@ func SendQuoteConfirmation(q *models.QuoteRequest, quoteID string) error {
 Projects: %s<br>
 Estimated budget: %s<br>
 Payment plan: %s</p>
-<p>If you have any questions, feel free to reach out at joel@joledev.com.</p>
+<p>If you have any questions, feel free to reach out at contacto@joledev.com.</p>
 <p>Best regards,<br>Joel López Verdugo<br>JoleDev — Technology tailored to your business</p>`,
 			q.Contact.Name, strings.Join(q.ProjectTypes, ", "), estimate,
 			getPlanLabel(q.PaymentPlan, "en"))
@@ -164,7 +174,7 @@ Payment plan: %s</p>
 Proyectos: %s<br>
 Presupuesto estimado: %s<br>
 Plan seleccionado: %s</p>
-<p>Si tienes alguna pregunta, escríbeme a joel@joledev.com.</p>
+<p>Si tienes alguna pregunta, escríbeme a contacto@joledev.com.</p>
 <p>Saludos,<br>Joel López Verdugo<br>JoleDev — Desarrollo a la medida de tu negocio</p>`,
 			q.Contact.Name, strings.Join(q.ProjectTypes, ", "), estimate,
 			getPlanLabel(q.PaymentPlan, "es"))

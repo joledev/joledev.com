@@ -14,7 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Backend:** Go 1.23 with Chi router (two separate microservices)
 - **Database:** SQLite (WAL mode) + Litestream (S3 backups)
 - **Blog:** Markdown/MDX via Astro Content Collections
-- **Email:** Resend API
+- **Email:** SMTP via Hostinger (implicit TLS, port 465) — single account: `contacto@joledev.com`
+- **CAPTCHA:** Cloudflare Turnstile (quoter + scheduler forms)
 - **i18n:** Astro i18n routing (es primary, en secondary)
 - **Deploy:** GitHub Actions → GHCR → K3s (Traefik ingress + cert-manager TLS)
 - **Monitoring:** Gatus (status page at status.joledev.com)
@@ -49,7 +50,7 @@ docker compose build    # Rebuild images
 ### Monorepo with 4 apps under `apps/`:
 
 - **`apps/web/`** — Astro static site with Svelte islands. Generates pure HTML/CSS/JS served by Nginx. Interactive components (quoter, scheduler, Three.js hero) are Svelte islands hydrated client-side.
-- **`apps/api-quoter/`** — Go microservice (port 8081). Handles quote calculation and email sending via Resend. Endpoint: `POST /quotes`.
+- **`apps/api-quoter/`** — Go microservice (port 8081). Handles quote calculation and email sending via SMTP. Endpoint: `POST /quotes`.
 - **`apps/api-scheduler/`** — Go microservice (port 8082). Manages appointment booking with auto-generated availability (Mon-Fri 9:00-16:00 America/Tijuana, 30min slots, 2h buffer). SQLite for persistence. Admin confirm/reject via email token links.
 - **`apps/status/`** — Gatus config for monitoring all services.
 
@@ -77,7 +78,7 @@ The scheduler computes availability on-the-fly (no manual slot creation):
 - **Namespace:** `joledev`
 - **Storage:** `local-path` StorageClass for SQLite PVC (api-scheduler)
 - **Manifests:** `k8s/` directory (namespace, deployments, services, ingress, gatus configmap)
-- **Secrets:** `joledev-secrets` (RESEND_API_KEY, CONTACT_EMAIL, SCHEDULER_ADMIN_PASSWORD) + `ghcr-secret`
+- **Secrets:** `joledev-secrets` (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, CONTACT_EMAIL, SCHEDULER_ADMIN_PASSWORD, TURNSTILE_SECRET_KEY) + `ghcr-secret`
 
 ### Routing (Traefik Ingress):
 - `joledev.com` → web (nginx serving Astro static files)
@@ -99,11 +100,13 @@ The scheduler computes availability on-the-fly (no manual slot creation):
 
 ### Environment Variables
 See `.env.example`. Key vars:
-- `RESEND_API_KEY` — For email sending in both APIs
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` — SMTP credentials (Hostinger, implicit TLS on port 465)
+- `CONTACT_EMAIL` — Recipient for quoter and scheduler notifications (`contacto@joledev.com`)
 - `SCHEDULER_ADMIN_PASSWORD` — Basic Auth password for admin scheduler routes
 - `API_BASE_URL` — Used by scheduler to build confirm/reject links in emails (prod: `https://api.joledev.com`, dev: `http://localhost:8082`)
 - `DOMAIN` — Used by Traefik for routing rules
-- `CONTACT_EMAIL` — Recipient for quoter and scheduler notifications
+- `PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — Cloudflare Turnstile CAPTCHA keys (test keys in `.env.example` always pass)
+- **Important:** Only one email account exists: `contacto@joledev.com`. Both `SMTP_FROM` and `CONTACT_EMAIL` use this address. Do not reference `noreply@` or other addresses.
 
 ## CI/CD Pipeline
 
@@ -122,7 +125,8 @@ See `.env.example`. Key vars:
 - **Input validation:** Email format regex, field length limits (name: 200, email: 254, phone: 30, company: 200, address: 500, notes: 2000), date (YYYY-MM-DD) and time (HH:MM) format validation
 - **Admin auth:** Basic Auth with `subtle.ConstantTimeCompare` (timing-safe)
 - **CORS:** Configurable via `CORS_ORIGIN` env var, defaults to `https://joledev.com`
-- **Never commit:** `.env` files, API keys, credentials. Only `.env.example` with placeholders.
+- **CAPTCHA:** Cloudflare Turnstile on quoter contact form and scheduler booking form. Backend verifies token via `https://challenges.cloudflare.com/turnstile/v0/siteverify`. Test keys (always pass) used in dev.
+- **Never commit:** `.env` files, SMTP credentials, API keys. Only `.env.example` with placeholders.
 
 ## Testing
 

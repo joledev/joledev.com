@@ -23,6 +23,7 @@ type QuoteRequest struct {
 	IncludeSourceCode bool         `json:"includeSourceCode"`
 	Contact           QuoteContact `json:"contact"`
 	Lang              string       `json:"lang"`
+	TurnstileToken    string       `json:"turnstileToken"`
 }
 
 type QuoteResponse struct {

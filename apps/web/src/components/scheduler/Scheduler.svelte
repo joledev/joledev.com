@@ -4,9 +4,10 @@
   interface Props {
     lang: 'es' | 'en';
     apiUrl?: string;
+    turnstileSiteKey?: string;
   }
 
-  let { lang, apiUrl = '' }: Props = $props();
+  let { lang, apiUrl = '', turnstileSiteKey = '' }: Props = $props();
 
   const TOTAL_STEPS = 5;
   let currentStep = $state(1);
@@ -69,6 +70,41 @@
   let submitError = $state('');
   let bookingId = $state('');
 
+  // Turnstile CAPTCHA
+  let turnstileToken = $state('');
+  let turnstileWidgetId = $state<string | null>(null);
+
+  function initTurnstile(container: HTMLElement) {
+    if (!turnstileSiteKey || turnstileWidgetId) return;
+    if (!(window as any).turnstile) return;
+    turnstileWidgetId = (window as any).turnstile.render(container, {
+      sitekey: turnstileSiteKey,
+      callback: (token: string) => { turnstileToken = token; },
+      'expired-callback': () => { turnstileToken = ''; },
+      'error-callback': () => { turnstileToken = ''; },
+      theme: 'auto',
+      size: 'flexible',
+    });
+  }
+
+  function resetTurnstile() {
+    if (turnstileWidgetId && (window as any).turnstile) {
+      (window as any).turnstile.reset(turnstileWidgetId);
+      turnstileToken = '';
+    }
+  }
+
+  // Load Turnstile script dynamically
+  $effect(() => {
+    if (!turnstileSiteKey) return;
+    if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  });
+
   // i18n helper
   const t: Record<string, any> = lang === 'es' ? {
     title: 'Agenda una reunión',
@@ -113,6 +149,7 @@
     changeTz: 'Cambiar',
     required: 'Este campo es requerido',
     invalidEmail: 'Email no válido',
+    stepLabels: ['Tipo', 'Fecha', 'Horario', 'Datos', 'Listo'],
   } : {
     title: 'Schedule a meeting',
     subtitle: 'Select the meeting type, date and time that works best for you.',
@@ -156,6 +193,7 @@
     changeTz: 'Change',
     required: 'This field is required',
     invalidEmail: 'Invalid email',
+    stepLabels: ['Type', 'Date', 'Time', 'Info', 'Done'],
   };
 
   // Derived: dates with available slots
@@ -396,6 +434,7 @@
           clientTimezone: clientTimezone,
           notes: notes.trim(),
           lang,
+          turnstileToken,
         }),
       });
 
@@ -405,6 +444,7 @@
         // Could be slot taken OR active booking exists
         submitError = data.message || t.slotTaken;
         toast.error(submitError);
+        resetTurnstile();
         submitting = false;
         // If slot taken, go back to time selection
         if (!data.message?.includes('activa') && !data.message?.includes('active')) {
@@ -419,6 +459,7 @@
       if (!res.ok || !data.success) {
         submitError = data.message || t.errorGeneric;
         toast.error(submitError);
+        resetTurnstile();
         submitting = false;
         return;
       }
@@ -430,6 +471,7 @@
     } catch {
       submitError = t.errorGeneric;
       toast.error(submitError);
+      resetTurnstile();
     }
     submitting = false;
   }
@@ -445,11 +487,18 @@
   <!-- Progress -->
   <div class="progress">
     {#each Array(TOTAL_STEPS) as _, i}
-      <div class="progress-step" class:active={currentStep >= i + 1} class:current={currentStep === i + 1}>
-        <span>{i + 1}</span>
+      <div class="progress-item">
+        <div class="progress-step" class:active={currentStep >= i + 1} class:current={currentStep === i + 1} class:completed={currentStep > i + 1}>
+          {#if currentStep > i + 1}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {:else}
+            <span>{i + 1}</span>
+          {/if}
+        </div>
+        <span class="progress-label">{t.stepLabels[i]}</span>
       </div>
       {#if i < TOTAL_STEPS - 1}
-        <div class="progress-line" class:active={currentStep > i + 1}></div>
+        <div class="progress-line" class:active={currentStep > i + 1} class:partial={currentStep === i + 1}></div>
       {/if}
     {/each}
   </div>
@@ -458,7 +507,7 @@
   <div class="step-container">
     <!-- STEP 1: Meeting Type -->
     {#if currentStep === 1}
-      <div class="step" style="animation: slideIn 0.3s ease-out">
+      <div class="step step-enter">
         <h3 class="step-title">{t.step1Title}</h3>
         <div class="type-grid">
           <button
@@ -466,8 +515,11 @@
             class="type-card"
             class:selected={meetingType === 'presencial'}
             onclick={() => { meetingType = 'presencial'; goNext(); }}
+            style="animation-delay: 0ms"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div class="type-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
             <span class="type-label">{t.inPerson}</span>
             <span class="type-desc">{t.inPersonDesc}</span>
           </button>
@@ -476,8 +528,11 @@
             class="type-card"
             class:selected={meetingType === 'videollamada'}
             onclick={() => { meetingType = 'videollamada'; goNext(); }}
+            style="animation-delay: 80ms"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            <div class="type-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
             <span class="type-label">{t.videoCall}</span>
             <span class="type-desc">{t.videoCallDesc}</span>
           </button>
@@ -487,7 +542,7 @@
 
     <!-- STEP 2: Calendar -->
     {#if currentStep === 2}
-      <div class="step" style="animation: slideIn 0.3s ease-out">
+      <div class="step step-enter">
         <h3 class="step-title">{t.step2Title}</h3>
         <div class="calendar">
           <div class="calendar-nav">
@@ -558,15 +613,16 @@
 
         <!-- Time slots shown below calendar when date is selected -->
         {#if selectedDate && slotsForDate.length > 0}
-          <div class="time-section" style="animation: slideIn 0.3s ease-out">
+          <div class="time-section step-enter">
             <h3 class="step-title">{t.step3Title}</h3>
             <div class="time-grid">
-              {#each slotsForDate as slot}
+              {#each slotsForDate as slot, i}
                 <button
                   type="button"
                   class="time-btn"
                   class:selected={selectedStartTime === slot.startTime}
                   onclick={() => { selectSlot(slot); currentStep = 3; }}
+                  style="animation-delay: {Math.min(i, 5) * 30}ms"
                 >
                   {toClientTime(slot.date, slot.startTime)}
                 </button>
@@ -581,7 +637,7 @@
 
     <!-- STEP 3: Time confirmation (brief, then auto-advance to step 4) -->
     {#if currentStep === 3}
-      <div class="step" style="animation: slideIn 0.3s ease-out">
+      <div class="step step-enter">
         <h3 class="step-title">{t.step3Title}</h3>
         <div class="selected-summary">
           <div class="summary-item">
@@ -606,64 +662,71 @@
 
     <!-- STEP 4: Contact Form -->
     {#if currentStep === 4}
-      <div class="step" style="animation: slideIn 0.3s ease-out">
+      <div class="step step-enter">
         <h3 class="step-title">{t.step4Title}</h3>
         <form class="contact-form" onsubmit={(e) => { e.preventDefault(); submitBooking(); }}>
-          <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && clientName.trim()} class:field-invalid={fieldTouched.name && formErrors.name}>
-            <label for="s-name">{t.name} *</label>
-            <div class="input-wrapper">
-              <input id="s-name" type="text" bind:value={clientName} required autocomplete="name" onblur={() => { fieldTouched.name = true; validateField('name'); }} />
-              {#if fieldTouched.name && !formErrors.name && clientName.trim()}
-                <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-              {/if}
+          <div class="form-grid">
+            <div class="form-field" class:field-valid={fieldTouched.name && !formErrors.name && clientName.trim()} class:field-invalid={fieldTouched.name && formErrors.name} style="animation-delay: 0ms">
+              <label for="s-name">{t.name} *</label>
+              <div class="input-wrapper">
+                <input id="s-name" type="text" bind:value={clientName} required autocomplete="name" onblur={() => { fieldTouched.name = true; validateField('name'); }} />
+                {#if fieldTouched.name && !formErrors.name && clientName.trim()}
+                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                {/if}
+              </div>
+              {#if fieldTouched.name && formErrors.name}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</span>{/if}
             </div>
-            {#if fieldTouched.name && formErrors.name}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.name}</span>{/if}
-          </div>
-          <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && clientEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email}>
-            <label for="s-email">{t.email} *</label>
-            <div class="input-wrapper">
-              <input id="s-email" type="email" bind:value={clientEmail} required autocomplete="email" onblur={() => { fieldTouched.email = true; validateField('email'); }} />
-              {#if fieldTouched.email && !formErrors.email && clientEmail.trim()}
-                <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-              {/if}
+            <div class="form-field" class:field-valid={fieldTouched.email && !formErrors.email && clientEmail.trim()} class:field-invalid={fieldTouched.email && formErrors.email} style="animation-delay: 50ms">
+              <label for="s-email">{t.email} *</label>
+              <div class="input-wrapper">
+                <input id="s-email" type="email" bind:value={clientEmail} required autocomplete="email" onblur={() => { fieldTouched.email = true; validateField('email'); }} />
+                {#if fieldTouched.email && !formErrors.email && clientEmail.trim()}
+                  <span class="field-icon field-icon-valid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                {/if}
+              </div>
+              {#if fieldTouched.email && formErrors.email}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</span>{/if}
             </div>
-            {#if fieldTouched.email && formErrors.email}<span class="field-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{formErrors.email}</span>{/if}
-          </div>
-          <div class="form-field">
-            <label for="s-phone">{t.phone}</label>
-            <input id="s-phone" type="tel" bind:value={clientPhone} autocomplete="tel" />
-          </div>
-          <div class="form-field">
-            <label for="s-company">{t.company}</label>
-            <input id="s-company" type="text" bind:value={clientCompany} autocomplete="organization" />
-          </div>
-          {#if meetingType === 'presencial'}
-            <div class="form-field">
-              <label for="s-address">{t.address}</label>
-              <input id="s-address" type="text" bind:value={clientAddress} placeholder={t.addressHint} autocomplete="street-address" />
+            <div class="form-field" style="animation-delay: 100ms">
+              <label for="s-phone">{t.phone}</label>
+              <input id="s-phone" type="tel" bind:value={clientPhone} autocomplete="tel" />
             </div>
-          {/if}
-          <div class="form-field">
-            <label for="s-notes">{t.notes}</label>
-            <textarea id="s-notes" bind:value={notes} placeholder={t.notesPlaceholder} rows="3"></textarea>
-          </div>
-          {#if submitError}
-            <div class="error-msg">{submitError}</div>
-          {/if}
-          <button type="submit" class="btn-primary" style="width: 100%;" disabled={submitting}>
-            {#if submitting}
-              <span class="spinner"></span>
-            {:else}
-              {t.confirm}
+            <div class="form-field" style="animation-delay: 150ms">
+              <label for="s-company">{t.company}</label>
+              <input id="s-company" type="text" bind:value={clientCompany} autocomplete="organization" />
+            </div>
+            {#if meetingType === 'presencial'}
+              <div class="form-field full-width" style="animation-delay: 200ms">
+                <label for="s-address">{t.address}</label>
+                <input id="s-address" type="text" bind:value={clientAddress} placeholder={t.addressHint} autocomplete="street-address" />
+              </div>
             {/if}
-          </button>
+            <div class="form-field full-width" style="animation-delay: {meetingType === 'presencial' ? 250 : 200}ms">
+              <label for="s-notes">{t.notes}</label>
+              <textarea id="s-notes" bind:value={notes} placeholder={t.notesPlaceholder} rows="3"></textarea>
+            </div>
+            {#if turnstileSiteKey}
+              <div class="full-width" use:initTurnstile></div>
+            {/if}
+            {#if submitError}
+              <div class="error-msg full-width">{submitError}</div>
+            {/if}
+            <div class="full-width">
+              <button type="submit" class="btn-primary submit-btn" disabled={submitting}>
+                {#if submitting}
+                  <span class="spinner"></span>
+                {:else}
+                  {t.confirm}
+                {/if}
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     {/if}
 
     <!-- STEP 5: Pending Confirmation -->
     {#if currentStep === 5}
-      <div class="step confirmation" style="animation: slideIn 0.3s ease-out">
+      <div class="step confirmation step-enter">
         <div class="success-check">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
@@ -699,7 +762,10 @@
   <!-- Navigation buttons -->
   {#if currentStep > 1 && currentStep < 5}
     <div class="nav-buttons">
-      <button type="button" class="nav-btn back" onclick={goBack}>{t.back}</button>
+      <button type="button" class="nav-btn back" onclick={goBack}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        {t.back}
+      </button>
       {#if currentStep === 3}
         <button type="button" class="nav-btn next" onclick={goNext} disabled={!canNext}>{t.next}</button>
       {/if}
@@ -708,14 +774,21 @@
 </div>
 
 <style>
+  /* ===== Container ===== */
   .scheduler {
     background: var(--color-glass);
     backdrop-filter: blur(12px);
     border: 1px solid var(--color-glass-border);
-    border-radius: 1.25rem;
+    border-radius: 1.5rem;
     padding: 2rem;
     max-width: 600px;
     margin: 0 auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  :global([data-theme="dark"]) .scheduler {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   }
 
   .scheduler-header {
@@ -735,13 +808,27 @@
     font-size: 0.9375rem;
   }
 
-  /* Progress */
+  /* ===== Progress Bar ===== */
   .progress {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 0;
     margin-bottom: 2rem;
+  }
+
+  .progress-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .progress-label {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    white-space: nowrap;
   }
 
   .progress-step {
@@ -757,6 +844,7 @@
     color: var(--color-text-muted);
     background: var(--color-bg-primary);
     transition: all 0.3s;
+    flex-shrink: 0;
   }
 
   .progress-step.active {
@@ -768,20 +856,90 @@
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
     color: #fff;
+    box-shadow: 0 0 0 4px var(--color-accent-subtle);
+  }
+
+  .progress-step.completed {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+    color: #fff;
   }
 
   .progress-line {
-    width: 2rem;
+    flex: 1;
+    min-width: 1.5rem;
     height: 2px;
     background: var(--color-border);
     transition: background 0.3s;
+    margin-top: 1rem; /* align to center of circles */
   }
 
   .progress-line.active {
     background: var(--color-accent-primary);
   }
 
-  /* Steps */
+  .progress-line.partial {
+    background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-light));
+  }
+
+  /* ===== Animations ===== */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes successPulse {
+    0% { opacity: 0.6; transform: scale(0.8); }
+    100% { opacity: 0; transform: scale(1.8); }
+  }
+
+  @keyframes pendingPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+
+  .step-enter {
+    animation: fadeSlideUp 0.35s ease-out both;
+  }
+
+  /* Staggered type cards */
+  .type-card {
+    animation: fadeSlideUp 0.35s ease-out both;
+  }
+
+  /* Staggered time slots */
+  .time-btn {
+    animation: fadeSlideUp 0.35s ease-out both;
+  }
+
+  /* Staggered form fields */
+  .form-grid > .form-field {
+    animation: fadeSlideUp 0.35s ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step-enter,
+    .type-card,
+    .time-btn,
+    .form-grid > .form-field,
+    .success-check,
+    .success-check::before,
+    .pending-badge {
+      animation-duration: 0s !important;
+    }
+  }
+
+  /* ===== Steps ===== */
   .step-container {
     min-height: 300px;
   }
@@ -794,7 +952,7 @@
     text-align: center;
   }
 
-  /* Step 1: Type selection */
+  /* ===== Step 1: Type Selection ===== */
   .type-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -811,17 +969,37 @@
     border: 2px solid var(--color-border);
     border-radius: 1rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--color-text-primary);
   }
 
   .type-card:hover {
-    border-color: var(--color-accent-primary);
+    border-color: var(--color-accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
   }
 
   .type-card.selected {
     border-color: var(--color-accent-primary);
     background: var(--color-accent-subtle);
+    box-shadow: inset 0 0 0 1px var(--color-accent-primary);
+  }
+
+  .type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 0.875rem;
+    background: var(--color-accent-subtle);
+    color: var(--color-accent-primary);
+    transition: background 0.2s;
+  }
+
+  .type-card.selected .type-icon {
+    background: linear-gradient(135deg, var(--color-accent-subtle), var(--color-accent-primary));
+    color: #fff;
   }
 
   .type-label {
@@ -834,12 +1012,13 @@
     color: var(--color-text-secondary);
   }
 
-  /* Calendar */
+  /* ===== Calendar ===== */
   .calendar {
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: 1rem;
     padding: 1.25rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   }
 
   .calendar-nav {
@@ -906,6 +1085,7 @@
     color: var(--color-text-primary);
     cursor: default;
     transition: all 0.15s;
+    position: relative;
   }
 
   .cal-day.empty {
@@ -922,20 +1102,35 @@
     background: var(--color-accent-subtle);
     color: var(--color-accent-primary);
     font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--color-accent-subtle);
   }
 
   .cal-day.available:hover {
     border-color: var(--color-accent-primary);
+    transform: scale(1.05);
   }
 
   .cal-day.selected {
     background: var(--color-accent-primary);
     color: #fff;
     border-color: var(--color-accent-primary);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
   }
 
-  .cal-day.today {
-    border-color: var(--color-accent-light);
+  .cal-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-accent-primary);
+  }
+
+  .cal-day.today.selected::after {
+    background: #fff;
   }
 
   .loading {
@@ -951,7 +1146,7 @@
     margin-top: 1rem;
   }
 
-  /* Timezone bar */
+  /* ===== Timezone Bar ===== */
   .tz-bar {
     display: flex;
     align-items: center;
@@ -1003,7 +1198,7 @@
     border-color: var(--color-accent-primary);
   }
 
-  /* Time slots */
+  /* ===== Time Slots (Pill Style) ===== */
   .time-section {
     margin-top: 1.5rem;
   }
@@ -1018,40 +1213,50 @@
     padding: 0.75rem;
     background: var(--color-bg-primary);
     border: 2px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: 9999px;
     cursor: pointer;
     font-weight: 500;
     font-size: 0.9375rem;
     color: var(--color-text-primary);
-    transition: all 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .time-btn:hover {
     border-color: var(--color-accent-primary);
     color: var(--color-accent-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
   }
 
   .time-btn.selected {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
     color: #fff;
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.3);
   }
 
-  /* Summary */
+  /* ===== Summary Cards ===== */
   .selected-summary, .success-details {
-    background: var(--color-bg-primary);
+    background: linear-gradient(135deg, var(--color-bg-primary), var(--color-bg-secondary));
     border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent-primary);
     border-radius: 1rem;
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0;
   }
 
   .summary-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .summary-item:last-child {
+    border-bottom: none;
   }
 
   .summary-label {
@@ -1062,12 +1267,18 @@
   .summary-value {
     font-weight: 600;
     font-size: 0.9375rem;
+    font-family: var(--font-display);
   }
 
-  /* Contact form */
+  /* ===== Contact Form (2-Column Grid) ===== */
   .contact-form {
     display: flex;
     flex-direction: column;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
 
@@ -1075,6 +1286,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
+  }
+
+  .form-field.full-width,
+  .full-width {
+    grid-column: 1 / -1;
   }
 
   .form-field label {
@@ -1105,6 +1321,10 @@
 
   .input-wrapper {
     position: relative;
+  }
+
+  .input-wrapper input {
+    width: 100%;
   }
 
   .field-icon {
@@ -1139,6 +1359,11 @@
     text-align: center;
   }
 
+  .submit-btn {
+    width: 100%;
+    border-radius: 0.75rem;
+  }
+
   .spinner {
     width: 1.25rem;
     height: 1.25rem;
@@ -1148,7 +1373,7 @@
     animation: spin 0.6s linear infinite;
   }
 
-  /* Confirmation */
+  /* ===== Confirmation ===== */
   .confirmation {
     text-align: center;
   }
@@ -1159,6 +1384,17 @@
     animation: popIn 0.4s ease-out;
     display: flex;
     justify-content: center;
+    position: relative;
+  }
+
+  .success-check::before {
+    content: '';
+    position: absolute;
+    inset: -1rem;
+    background: radial-gradient(circle, var(--color-accent-subtle) 20%, transparent 70%);
+    border-radius: 50%;
+    animation: successPulse 1.5s ease-out forwards;
+    z-index: -1;
   }
 
   .success-title {
@@ -1177,6 +1413,7 @@
     font-size: 0.8125rem;
     font-weight: 600;
     margin-bottom: 1.25rem;
+    animation: pendingPulse 2s ease-in-out infinite;
   }
 
   .success-details {
@@ -1196,22 +1433,31 @@
     margin-bottom: 1.5rem;
   }
 
+  .booking-id strong {
+    font-family: var(--font-mono);
+  }
+
   .home-btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.75rem 1.5rem;
     background: var(--color-accent-primary);
     color: #fff;
     border-radius: 0.75rem;
     text-decoration: none;
     font-weight: 600;
-    transition: opacity 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    min-height: 44px;
   }
 
   .home-btn:hover {
-    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
   }
 
-  /* Navigation */
+  /* ===== Navigation ===== */
   .nav-buttons {
     display: flex;
     justify-content: space-between;
@@ -1225,7 +1471,11 @@
     font-weight: 500;
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
   }
 
   .nav-btn.back {
@@ -1237,6 +1487,8 @@
   .nav-btn.back:hover {
     border-color: var(--color-text-primary);
     color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    transform: translateX(-2px);
   }
 
   .nav-btn.next {
@@ -1244,37 +1496,49 @@
     border: none;
     color: #fff;
     margin-left: auto;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  }
+
+  .nav-btn.next:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
   }
 
   .nav-btn.next:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
   }
 
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    70% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Mobile */
+  /* ===== Mobile ===== */
   @media (max-width: 640px) {
     .scheduler {
-      padding: 1.25rem;
-      border-radius: 0.75rem;
+      padding: 1rem;
+      border-radius: 1rem;
     }
 
     .scheduler-title {
       font-size: 1.375rem;
+    }
+
+    .progress-label {
+      display: none;
+    }
+
+    .progress-step {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.625rem;
+    }
+
+    .progress-step.current {
+      box-shadow: 0 0 0 3px var(--color-accent-subtle);
+    }
+
+    .progress-line {
+      flex: 1;
+      min-width: 1rem;
+      margin-top: 0.75rem;
     }
 
     .type-grid {
@@ -1285,14 +1549,33 @@
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .progress-step {
-      width: 1.75rem;
-      height: 1.75rem;
-      font-size: 0.6875rem;
+    .form-grid {
+      grid-template-columns: 1fr;
     }
 
-    .progress-line {
-      width: 1.25rem;
+    .summary-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.125rem;
+    }
+
+    .home-btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .nav-buttons {
+      flex-direction: column;
+    }
+
+    .nav-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .nav-btn.next {
+      margin-left: 0;
     }
   }
 </style>

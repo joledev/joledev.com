@@ -76,6 +76,12 @@ func (h *QuoteHandler) CreateQuote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verify Turnstile CAPTCHA
+	if err := services.VerifyTurnstile(req.TurnstileToken, strings.TrimSpace(ip)); err != nil {
+		http.Error(w, `{"success":false,"message":"`+err.Error()+`"}`, http.StatusForbidden)
+		return
+	}
+
 	// Validate required fields
 	name := strings.TrimSpace(req.Contact.Name)
 	email := strings.TrimSpace(req.Contact.Email)

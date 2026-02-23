@@ -41,8 +41,13 @@ services:
     build: ./apps/api-quoter
     environment:
       - PORT=8081
-      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
       - CONTACT_EMAIL=${CONTACT_EMAIL}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.quoter.rule=Host(`api.${DOMAIN}`) && PathPrefix(`/quotes`)"
@@ -58,10 +63,15 @@ services:
     build: ./apps/api-scheduler
     environment:
       - PORT=8082
-      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
       - CONTACT_EMAIL=${CONTACT_EMAIL}
       - SCHEDULER_ADMIN_PASSWORD=${SCHEDULER_ADMIN_PASSWORD}
       - API_BASE_URL=https://api.${DOMAIN}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY}
     volumes:
       - sqlite-data:/data
     labels:

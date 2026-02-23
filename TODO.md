@@ -12,6 +12,10 @@ Roadmap and pending improvements.
 - [ ] Write more articles (currently only 1: "Serverless vs. VPS")
 - [ ] Verify OG images generate correctly for published posts
 
+## Security
+
+- [ ] Set real Cloudflare Turnstile keys in production (`PUBLIC_TURNSTILE_SITE_KEY` in Astro build env, `TURNSTILE_SECRET_KEY` in K8s `joledev-secrets` and rebuild/restart both APIs)
+
 ## Frontend / UX
 
 - [ ] Lighthouse audit: target 95+ in all categories
