@@ -2,19 +2,11 @@
   import { onMount } from 'svelte';
 
   let canvas: HTMLCanvasElement;
-  let isMobile = $state(true);
-  let mounted = $state(false);
 
   onMount(() => {
-    isMobile = window.innerWidth < 768;
-    mounted = true;
-
-    // Skip Three.js entirely on mobile — use CSS-only background
-    if (isMobile) return;
-
-    // Check reduced motion preference
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+    const isMobile = window.innerWidth < 768;
     let destroyed = false;
 
     (async () => {
@@ -30,42 +22,119 @@
       const renderer = new THREE.WebGLRenderer({
         canvas,
         alpha: true,
-        antialias: false,
+        antialias: !isMobile,
         powerPreference: 'low-power',
       });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+
+      if (isMobile) {
+        // ── Mobile: lightweight wireframe icosahedron + one ring ──
+        const wireGeo = new THREE.IcosahedronGeometry(3.5, 1);
+        const wireMat = new THREE.MeshBasicMaterial({
+          color: 0x60a5fa,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.35,
+        });
+        const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+        scene.add(wireMesh);
+
+        const torusGeo = new THREE.TorusGeometry(5.5, 0.04, 8, 48);
+        const torusMat = new THREE.MeshBasicMaterial({
+          color: 0x3b82f6,
+          transparent: true,
+          opacity: 0.25,
+        });
+        const torus = new THREE.Mesh(torusGeo, torusMat);
+        torus.rotation.x = Math.PI * 0.5;
+        scene.add(torus);
+
+        // Theme
+        function applyTheme() {
+          const dark = isDark();
+          wireMat.opacity = dark ? 0.35 : 0.15;
+          torusMat.opacity = dark ? 0.25 : 0.1;
+        }
+        const themeObs = new MutationObserver(applyTheme);
+        themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        applyTheme();
+
+        // Resize
+        let ready = false;
+        const resize = () => {
+          const w = canvas.clientWidth;
+          const h = canvas.clientHeight;
+          if (w === 0 || h === 0) return;
+          ready = true;
+          renderer.setSize(w, h, false);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        };
+        resize();
+        window.addEventListener('resize', resize, { passive: true });
+
+        // Animation — 24fps
+        let animId: number;
+        let lastFrame = 0;
+        const clock = new THREE.Clock();
+
+        const animate = (now: number) => {
+          animId = requestAnimationFrame(animate);
+          if (now - lastFrame < 1000 / 24) return;
+          lastFrame = now;
+          if (!ready) { resize(); return; }
+
+          const t = clock.getElapsedTime();
+          wireMesh.rotation.x = t * 0.12;
+          wireMesh.rotation.y = t * 0.18;
+          wireMesh.position.y = Math.sin(t * 0.4) * 0.4;
+          torus.rotation.z = t * 0.08;
+
+          renderer.render(scene, camera);
+        };
+        animate(0);
+
+        const handleVis = () => {
+          if (document.hidden) cancelAnimationFrame(animId);
+          else { lastFrame = 0; animate(0); }
+        };
+        document.addEventListener('visibilitychange', handleVis);
+
+        return () => {
+          destroyed = true;
+          cancelAnimationFrame(animId);
+          document.removeEventListener('visibilitychange', handleVis);
+          renderer.dispose();
+          wireGeo.dispose();
+          wireMat.dispose();
+          torusGeo.dispose();
+          torusMat.dispose();
+          themeObs.disconnect();
+          window.removeEventListener('resize', resize);
+        };
+      }
+
+      // ── Desktop: full scene ──────────────────────────────────
 
       // Lighting
-      const ambientLight = new THREE.AmbientLight(0x60a5fa, 0.4);
-      scene.add(ambientLight);
-
+      scene.add(new THREE.AmbientLight(0x60a5fa, 0.4));
       const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
       mainLight.position.set(5, 5, 8);
       scene.add(mainLight);
-
       const rimLight = new THREE.DirectionalLight(0x2563eb, 0.6);
       rimLight.position.set(-5, -3, -5);
       scene.add(rimLight);
-
       const pointLight = new THREE.PointLight(0x3b82f6, 0.8, 30);
       pointLight.position.set(0, 3, 6);
       scene.add(pointLight);
 
-      // Main geometry: Icosahedron with glass material
+      // Icosahedron with glass material
       const icoGeo = new THREE.IcosahedronGeometry(4.5, 1);
       const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0x2563eb,
-        metalness: 0.1,
-        roughness: 0.05,
-        transmission: 0.92,
-        thickness: 2.0,
-        ior: 1.5,
-        envMapIntensity: 1.0,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.1,
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide,
+        color: 0x2563eb, metalness: 0.1, roughness: 0.05,
+        transmission: 0.92, thickness: 2.0, ior: 1.5,
+        envMapIntensity: 1.0, clearcoat: 1.0, clearcoatRoughness: 0.1,
+        transparent: true, opacity: 0.85, side: THREE.DoubleSide,
       });
       const icoMesh = new THREE.Mesh(icoGeo, glassMat);
       scene.add(icoMesh);
@@ -73,49 +142,34 @@
       // Wireframe overlay
       const wireGeo = new THREE.IcosahedronGeometry(4.55, 1);
       const wireMat = new THREE.MeshBasicMaterial({
-        color: 0x60a5fa,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.3,
+        color: 0x60a5fa, wireframe: true, transparent: true, opacity: 0.3,
       });
       const wireMesh = new THREE.Mesh(wireGeo, wireMat);
       scene.add(wireMesh);
 
-      // Orbiting ring (torus)
+      // Torus rings
       const torusGeo = new THREE.TorusGeometry(7, 0.06, 12, 64);
-      const torusMat = new THREE.MeshBasicMaterial({
-        color: 0x3b82f6,
-        transparent: true,
-        opacity: 0.35,
-      });
+      const torusMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.35 });
       const torus = new THREE.Mesh(torusGeo, torusMat);
       torus.rotation.x = Math.PI * 0.5;
       scene.add(torus);
 
-      // Second ring
       const torus2Geo = new THREE.TorusGeometry(8.5, 0.04, 12, 64);
-      const torus2Mat = new THREE.MeshBasicMaterial({
-        color: 0x2563eb,
-        transparent: true,
-        opacity: 0.2,
-      });
+      const torus2Mat = new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.2 });
       const torus2 = new THREE.Mesh(torus2Geo, torus2Mat);
       torus2.rotation.x = Math.PI * 0.6;
       torus2.rotation.z = Math.PI * 0.15;
       scene.add(torus2);
 
-      // Floating orbs (reduced count)
+      // Floating orbs
       const orbCount = 6;
       const orbs: THREE.Mesh[] = [];
       const orbData: { angle: number; radius: number; speed: number; yOffset: number }[] = [];
-
       for (let i = 0; i < orbCount; i++) {
         const orbGeo = new THREE.SphereGeometry(0.15 + Math.random() * 0.15, 12, 12);
         const orbOpacity = 0.6 + Math.random() * 0.3;
         const orbMat = new THREE.MeshBasicMaterial({
-          color: [0x2563eb, 0x3b82f6, 0x60a5fa][i % 3],
-          transparent: true,
-          opacity: orbOpacity,
+          color: [0x2563eb, 0x3b82f6, 0x60a5fa][i % 3], transparent: true, opacity: orbOpacity,
         });
         orbMat.userData = { baseOpacity: orbOpacity };
         const orb = new THREE.Mesh(orbGeo, orbMat);
@@ -129,35 +183,25 @@
         });
       }
 
-      // Background particles
+      // Particles
       const PARTICLE_COUNT = 60;
       const pPositions = new Float32Array(PARTICLE_COUNT * 3);
       const pColors = new Float32Array(PARTICLE_COUNT * 3);
       const pSizes = new Float32Array(PARTICLE_COUNT);
-
-      const palette = [
-        new THREE.Color('#2563EB'),
-        new THREE.Color('#3B82F6'),
-        new THREE.Color('#60A5FA'),
-      ];
-
+      const palette = [new THREE.Color('#2563EB'), new THREE.Color('#3B82F6'), new THREE.Color('#60A5FA')];
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const i3 = i * 3;
         pPositions[i3] = (Math.random() - 0.5) * 60;
         pPositions[i3 + 1] = (Math.random() - 0.5) * 40;
         pPositions[i3 + 2] = (Math.random() - 0.5) * 30 - 10;
         const color = palette[Math.floor(Math.random() * palette.length)];
-        pColors[i3] = color.r;
-        pColors[i3 + 1] = color.g;
-        pColors[i3 + 2] = color.b;
+        pColors[i3] = color.r; pColors[i3 + 1] = color.g; pColors[i3 + 2] = color.b;
         pSizes[i] = Math.random() * 2 + 0.5;
       }
-
       const pGeo = new THREE.BufferGeometry();
       pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
       pGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
       pGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
-
       const pMat = new THREE.ShaderMaterial({
         vertexShader: `
           attribute float size;
@@ -178,11 +222,8 @@
             gl_FragColor = vec4(vColor, alpha * 0.4);
           }
         `,
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false,
+        vertexColors: true, transparent: true, depthWrite: false,
       });
-
       const particles = new THREE.Points(pGeo, pMat);
       scene.add(particles);
 
@@ -208,17 +249,12 @@
         `;
         pMat.needsUpdate = true;
       }
-
       const themeObserver = new MutationObserver(applyTheme);
       themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       applyTheme();
 
       // Mouse tracking
-      let mouseX = 0;
-      let mouseY = 0;
-      let smoothX = 0;
-      let smoothY = 0;
-
+      let mouseX = 0, mouseY = 0, smoothX = 0, smoothY = 0;
       const onMouseMove = (e: MouseEvent) => {
         mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
         mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -239,27 +275,24 @@
       resize();
       window.addEventListener('resize', resize, { passive: true });
 
-      // Animation loop — throttled to ~30fps to reduce CPU usage
+      // Animation — 30fps
       let animId: number;
       const clock = new THREE.Clock();
       let lastFrame = 0;
-      const FRAME_INTERVAL = 1000 / 30;
 
       const animateLoop = (now: number) => {
         animId = requestAnimationFrame(animateLoop);
-        if (now - lastFrame < FRAME_INTERVAL) return;
+        if (now - lastFrame < 1000 / 30) return;
         lastFrame = now;
-
         if (!ready) { resize(); return; }
-        const t = clock.getElapsedTime();
 
+        const t = clock.getElapsedTime();
         smoothX += (mouseX - smoothX) * 0.03;
         smoothY += (mouseY - smoothY) * 0.03;
 
         icoMesh.rotation.x = t * 0.15 + smoothY * 0.5;
         icoMesh.rotation.y = t * 0.2 + smoothX * 0.5;
         icoMesh.position.y = Math.sin(t * 0.5) * 0.6;
-
         wireMesh.rotation.copy(icoMesh.rotation);
         wireMesh.position.copy(icoMesh.position);
 
@@ -277,7 +310,6 @@
 
         particles.rotation.y = t * 0.02 + smoothX * 0.05;
         particles.rotation.x = smoothY * 0.03;
-
         pointLight.position.x = smoothX * 4;
         pointLight.position.y = 3 - smoothY * 2;
 
@@ -285,14 +317,9 @@
       };
       animateLoop(0);
 
-      // Pause when tab is not visible
       const handleVisibility = () => {
-        if (document.hidden) {
-          cancelAnimationFrame(animId);
-        } else {
-          lastFrame = 0;
-          animateLoop(0);
-        }
+        if (document.hidden) cancelAnimationFrame(animId);
+        else { lastFrame = 0; animateLoop(0); }
       };
       document.addEventListener('visibilitychange', handleVisibility);
 
@@ -301,20 +328,12 @@
         cancelAnimationFrame(animId);
         document.removeEventListener('visibilitychange', handleVisibility);
         renderer.dispose();
-        icoGeo.dispose();
-        glassMat.dispose();
-        wireGeo.dispose();
-        wireMat.dispose();
-        torusGeo.dispose();
-        torusMat.dispose();
-        torus2Geo.dispose();
-        torus2Mat.dispose();
-        orbs.forEach((o) => {
-          o.geometry.dispose();
-          (o.material as THREE.Material).dispose();
-        });
-        pGeo.dispose();
-        pMat.dispose();
+        icoGeo.dispose(); glassMat.dispose();
+        wireGeo.dispose(); wireMat.dispose();
+        torusGeo.dispose(); torusMat.dispose();
+        torus2Geo.dispose(); torus2Mat.dispose();
+        orbs.forEach((o) => { o.geometry.dispose(); (o.material as THREE.Material).dispose(); });
+        pGeo.dispose(); pMat.dispose();
         themeObserver.disconnect();
         window.removeEventListener('resize', resize);
         window.removeEventListener('mousemove', onMouseMove);
@@ -323,17 +342,7 @@
   });
 </script>
 
-{#if !mounted || !isMobile}
-  <canvas bind:this={canvas} class="hero-canvas"></canvas>
-{/if}
-
-{#if mounted && isMobile}
-  <div class="hero-mobile-bg">
-    <div class="hero-mobile-orb hero-mobile-orb--1"></div>
-    <div class="hero-mobile-orb hero-mobile-orb--2"></div>
-    <div class="hero-mobile-orb hero-mobile-orb--3"></div>
-  </div>
-{/if}
+<canvas bind:this={canvas} class="hero-canvas"></canvas>
 
 <style>
   .hero-canvas {
@@ -343,64 +352,5 @@
     height: 100%;
     pointer-events: none;
     z-index: 0;
-  }
-
-  .hero-mobile-bg {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .hero-mobile-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.3;
-    animation: mobileFloat 8s ease-in-out infinite;
-  }
-
-  :global([data-theme="dark"]) .hero-mobile-orb {
-    opacity: 0.4;
-  }
-
-  .hero-mobile-orb--1 {
-    width: 200px;
-    height: 200px;
-    background: #2563eb;
-    top: 10%;
-    right: -20%;
-    animation-delay: 0s;
-  }
-
-  .hero-mobile-orb--2 {
-    width: 160px;
-    height: 160px;
-    background: #3b82f6;
-    bottom: 20%;
-    left: -15%;
-    animation-delay: -3s;
-  }
-
-  .hero-mobile-orb--3 {
-    width: 120px;
-    height: 120px;
-    background: #60a5fa;
-    top: 40%;
-    left: 50%;
-    animation-delay: -5s;
-  }
-
-  @keyframes mobileFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(10px, -15px) scale(1.05); }
-    66% { transform: translate(-8px, 10px) scale(0.95); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hero-mobile-orb {
-      animation: none;
-    }
   }
 </style>
