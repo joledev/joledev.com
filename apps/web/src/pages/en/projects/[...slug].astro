@@ -52,6 +52,8 @@ const TECH_COLORS: Record<string, string> = {
   'GitHub Actions': '#2088FF', 'Linux': '#FCC624', 'Framer Motion': '#0055FF',
   'Vercel': '#000000', 'WhatsApp API': '#25D366', 'GDScript': '#478CBF',
   'Aseprite': '#7D929E', 'Pixel Art': '#E91E63',
+  'Bubbletea': '#AD6FF7', 'Lipgloss': '#FF6CBB', 'SSH': '#4EAA25',
+  'Spotify API': '#1DB954',
 };
 ---
 
@@ -172,20 +174,25 @@ const TECH_COLORS: Record<string, string> = {
   </article>
 </BaseLayout>
 
-<script>
-  const reveals = document.querySelectorAll('[data-reveal]');
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          (entry.target as HTMLElement).classList.add('revealed');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
-  );
-  reveals.forEach((el) => observer.observe(el));
+<script is:inline>
+  function initProjectReveal() {
+    var reveals = document.querySelectorAll('[data-reveal]:not(.revealed)');
+    if (!reveals.length) return;
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.01, rootMargin: '0px 0px 100px 0px' }
+    );
+    reveals.forEach(function (el) { observer.observe(el); });
+  }
+  initProjectReveal();
+  document.addEventListener('astro:page-load', initProjectReveal);
 </script>
 
 <style>
@@ -562,12 +569,245 @@ const TECH_COLORS: Record<string, string> = {
     text-decoration-color: var(--color-accent-primary);
   }
 
+  .prose-custom :global(pre) {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    background: #0d1117 !important;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .prose-custom :global(pre code) {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    border: none;
+    border-radius: 0;
+  }
+
+  .prose-custom :global(pre::-webkit-scrollbar) {
+    height: 6px;
+  }
+
+  .prose-custom :global(pre::-webkit-scrollbar-track) {
+    background: transparent;
+  }
+
+  .prose-custom :global(pre::-webkit-scrollbar-thumb) {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .prose-custom :global(.diagram) {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    white-space: pre;
+  }
+
+  .prose-custom :global(.diagram strong) {
+    color: var(--color-accent-primary);
+    font-weight: 700;
+  }
+
+  .prose-custom :global(.diagram em) {
+    color: var(--color-secondary-primary);
+    font-style: normal;
+  }
+
+  .prose-custom :global(h3) {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
+  }
+
+  .prose-custom :global(ol) {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 1.25rem;
+    counter-reset: step-counter;
+  }
+
+  .prose-custom :global(ol > li) {
+    counter-increment: step-counter;
+    padding-left: 2rem;
+  }
+
+  .prose-custom :global(ol > li)::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    background: var(--color-accent-primary);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0.35em;
+  }
+
   .prose-custom :global(blockquote) {
     border-left: 3px solid var(--color-accent-primary);
-    padding-left: 1rem;
+    padding: 1rem 1.25rem;
     margin: 1.5rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--color-accent-subtle);
     font-style: italic;
     color: var(--color-text-muted);
+  }
+
+  .prose-custom :global(blockquote p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .prose-custom :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.875rem;
+  }
+
+  .prose-custom :global(th) {
+    background: var(--color-bg-elevated);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  .prose-custom :global(td) {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+
+  .prose-custom :global(hr) {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2.5rem auto;
+    width: 60%;
+  }
+
+  /* ─── Flow diagrams ─── */
+  .prose-custom :global(.flow-diagram) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin: 2rem 0;
+    padding: 1.5rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+  }
+
+  .prose-custom :global(.flow-diagram.flow-horizontal) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .prose-custom :global(.flow-node) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.625rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+    text-align: center;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .prose-custom :global(.flow-node strong) {
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+  }
+
+  .prose-custom :global(.flow-node span) {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .prose-custom :global(.flow-node code) {
+    font-size: 0.8125rem;
+    background: var(--color-bg-secondary);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    color: var(--color-accent-primary);
+    border: 1px solid var(--color-border);
+  }
+
+  .prose-custom :global(.flow-input) {
+    border-color: var(--color-accent-primary);
+    background: var(--color-accent-subtle);
+  }
+
+  .prose-custom :global(.flow-output) {
+    border-color: var(--color-secondary-primary);
+    background: var(--color-secondary-subtle);
+  }
+
+  .prose-custom :global(.flow-section) {
+    border-color: var(--color-border);
+  }
+
+  .prose-custom :global(.flow-arrow) {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    line-height: 1;
+    padding: 0.25rem 0;
+  }
+
+  .prose-custom :global(.flow-arrow-h) {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    line-height: 1;
+    padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .prose-custom :global(.flow-branches) {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  @media (max-width: 640px) {
+    .prose-custom :global(.flow-diagram.flow-horizontal) {
+      flex-direction: column;
+    }
+    .prose-custom :global(.flow-arrow-h) {
+      transform: rotate(90deg);
+      padding: 0.25rem 0;
+    }
   }
 
   /* ─── Navigation ─── */

@@ -1,0 +1,325 @@
+---
+title: 'ssh.joledev.com — Portafolio por Terminal'
+description: 'Un portafolio personal accesible por SSH con TUI interactiva, arte en braille Unicode, cancion del dia desde Spotify y blog integrado.'
+heroImage: '/images/projects/ssh-portfolio.gif'
+tags: ['Go', 'Bubbletea', 'Lipgloss', 'SSH', 'Spotify API', 'GitHub Actions', 'Linux']
+category: 'web'
+lang: 'es'
+featured: true
+order: 0
+---
+## La idea
+
+Todo empezo con un [reel de Instagram de @morilliu](https://www.instagram.com/morilliu/) donde mostraba un portafolio accesible por SSH. Me parecio una idea genial, pero en vez de replicar un portafolio tradicional, quise disenar algo mas personal: **un espacio propio para mis ideas**, donde pudiera compartir musica, pensamientos y proyectos desde la terminal.
+
+El resultado es [ssh.joledev.com](https://github.com/joledev/ssh.joledev) — un servidor SSH personalizado que en vez de darte una shell, te recibe con una interfaz interactiva.
+
+## Arquitectura
+
+El proyecto tiene una arquitectura intencionalmente simple — un unico binario de Go que hace todo:
+
+<div class="flow-diagram">
+  <div class="flow-node flow-input">
+    <code>ssh ssh.joledev.com</code>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-process">
+    <strong>Wish SSH Framework</strong>
+    <span>Puerto 22 &rarr; iptables &rarr; 2223</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-process">
+    <strong>Bubbletea TUI</strong>
+    <span>Elm Architecture: Model &rarr; Update &rarr; View</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-branches">
+    <div class="flow-node flow-section">
+      <strong>Cancion</strong>
+    </div>
+    <div class="flow-node flow-section">
+      <strong>Sobre mi</strong>
+    </div>
+    <div class="flow-node flow-section">
+      <strong>Blog</strong>
+    </div>
+  </div>
+</div>
+
+Cada conexion SSH crea una instancia aislada del TUI. No hay shell, no hay filesystem, no hay escalacion — solo la app.
+
+### El servidor SSH
+
+El punto de entrada es sorprendentemente simple. Wish maneja todo el handshake SSH y por cada sesion lanza un programa Bubbletea nuevo:
+
+```go
+s, err := wish.NewServer(
+    wish.WithAddress(fmt.Sprintf("%s:%s", host, port)),
+    wish.WithHostKeyPath(keyPath),
+    wish.WithMiddleware(
+        bubbletea.Middleware(func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+            m := tui.NewModel(songsPath, postsDir)
+            return m, []tea.ProgramOption{tea.WithAltScreen()}
+        }),
+    ),
+)
+```
+
+`WithAltScreen()` hace que la terminal entre en modo pantalla completa — como cuando abres `vim` o `htop`. Cuando el usuario cierra la sesion, la terminal vuelve a su estado original.
+
+### El estado del TUI
+
+El modelo de Bubbletea contiene todo el estado de la sesion. Cada usuario tiene su propia instancia:
+
+```go
+type Model struct {
+    Lang         Lang      // ES o EN
+    Section      Section   // SectionSong, SectionAbout, SectionBlog
+    Width        int       // Ancho de la terminal del usuario
+    Height       int       // Alto de la terminal del usuario
+    Songs        []data.Song
+    Posts        []data.Post
+    TodaySong    data.Song
+    CoverMono    string    // Portada en braille B&N
+    CoverColor   string    // Portada en braille ANSI color
+    ColorMode    bool      // Toggle entre B&N y color
+    SpotifyCode  string    // Codigo de barras escaneable
+    Frame        int       // Animacion del borde (tick cada 400ms)
+}
+```
+
+---
+
+## Cancion del dia
+
+Queria que cada dia todos los visitantes vieran la misma cancion, pero que fuera diferente cada dia. La solucion: **un hash SHA-256 de la fecha actual** como semilla determinista:
+
+```go
+func SongOfTheDay(songs []Song) Song {
+    loc, _ := time.LoadLocation("America/Tijuana")
+    now := time.Now().In(loc)
+    dateStr := now.Format("2006-01-02")
+
+    h := sha256.Sum256([]byte(dateStr))
+    seed := int64(binary.BigEndian.Uint64(h[:8]))
+    r := rand.New(rand.NewSource(seed))
+    idx := r.Intn(len(songs))
+
+    return songs[idx]
+}
+```
+
+Misma fecha, mismo hash, misma semilla, misma cancion. Da igual cuantas veces te conectes o desde donde — el resultado es identico para todos.
+
+### El catalogo: 578+ canciones sin API key
+
+Para llenar el catalogo, escribi un script en Python que hace scraping del embed publico de Spotify. Sin tokens, sin OAuth, sin registrar app:
+
+```python
+def scrape_spotify_playlist(playlist_url: str) -> list[dict]:
+    playlist_id = re.search(r"playlist/([a-zA-Z0-9]+)", playlist_url).group(1)
+    embed_url = f"https://open.spotify.com/embed/playlist/{playlist_id}"
+
+    # Spotify incluye los datos como JSON en el HTML
+    html = urllib.request.urlopen(req, timeout=15).read().decode("utf-8")
+    json_match = re.search(
+        r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+        html
+    )
+    data = json.loads(json_match.group(1))
+    track_list = data["props"]["pageProps"]["state"]["data"]["entity"]["trackList"]
+```
+
+El truco es que el endpoint embed de Spotify renderiza un HTML que incluye `__NEXT_DATA__` con toda la info de las canciones como JSON.
+
+---
+
+## Renderizado de imagenes en braille
+
+Este fue el reto mas grande. La terminal no soporta imagenes. La solucion: **arte en braille Unicode**.
+
+### Por que braille y no ASCII?
+
+Cada caracter braille codifica una cuadricula de **2x4 pixeles** (8 puntos), mientras que ASCII art tradicional solo tiene 1 pixel por caracter. Esto da **8x mas resolucion** en el mismo espacio:
+
+| Metodo | Resolucion | Caracteres |
+|--------|-----------|-----------|
+| ASCII art | 1x1 | ~70 niveles de gris |
+| Bloque Unicode | 2x2 | 4 combinaciones |
+| **Braille Unicode** | **2x4** | **256 combinaciones** |
+
+### El pipeline completo
+
+<div class="flow-diagram">
+  <div class="flow-node flow-input">
+    <strong>Spotify oEmbed API</strong>
+    <span>300x300 JPEG</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-process">
+    <strong>Resize + Grayscale</strong>
+    <span>Area-average downscaling + BT.601</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-process">
+    <strong>Contrast Enhance</strong>
+    <span>Factor 1.8x alrededor de la media</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-process">
+    <strong>Floyd-Steinberg Dithering</strong>
+    <span>Difusion de error: 7/16, 3/16, 5/16, 1/16</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-node flow-output">
+    <strong>Braille Mapping</strong>
+    <span>Cada bloque 2x4 &rarr; U+2800 + patron de bits</span>
+  </div>
+</div>
+
+### El mapeo a braille
+
+Cada caracter braille Unicode tiene un codepoint base de `U+2800` al que se le suman bits segun que puntos estan activos:
+
+```go
+const brailleBase = 0x2800
+
+var dotMap = [8][3]int{
+    {0, 0, 0x01}, {1, 0, 0x08},  // Fila 0: bit 0 y bit 3
+    {0, 1, 0x02}, {1, 1, 0x10},  // Fila 1: bit 1 y bit 4
+    {0, 2, 0x04}, {1, 2, 0x20},  // Fila 2: bit 2 y bit 5
+    {0, 3, 0x40}, {1, 3, 0x80},  // Fila 3: bit 6 y bit 7
+}
+
+// Resultado: rune(0x2800 + code)
+// Ejemplo: todos los puntos activos = 0x2800 + 0xFF = ⣿
+```
+
+### Floyd-Steinberg dithering
+
+El algoritmo clasico de difusion de error. Para cada pixel, decide blanco o negro y distribuye el error a los vecinos:
+
+```go
+func dither(gray [][]float64, w, h int) {
+    for y := 0; y < h; y++ {
+        for x := 0; x < w; x++ {
+            old := gray[y][x]
+            newVal := 0.0
+            if old >= 128 { newVal = 255 }
+            gray[y][x] = newVal
+            err := old - newVal
+
+            if x+1 < w             { gray[y][x+1]   += err * 7/16 }
+            if y+1 < h && x-1 >= 0 { gray[y+1][x-1] += err * 3/16 }
+            if y+1 < h             { gray[y+1][x]   += err * 5/16 }
+            if y+1 < h && x+1 < w  { gray[y+1][x+1] += err * 1/16 }
+        }
+    }
+}
+```
+
+### Modo color: ANSI true-color
+
+Ademas del modo blanco y negro, hay un modo color que usa **secuencias de escape ANSI de 24 bits**. Por cada caracter braille, se promedian los colores de los pixeles encendidos (foreground) y apagados (background):
+
+```go
+// Foreground + Background en un solo caracter
+fmt.Sprintf("\033[38;2;%d;%d;%d;48;2;%d;%d;%dm%c\033[0m",
+    fr, fg, fb,  // Color del texto (puntos activos)
+    br, bgg, bb, // Color del fondo (puntos inactivos)
+    char,        // El caracter braille
+)
+```
+
+---
+
+## El codigo de Spotify escaneable
+
+El Spotify Code es el codigo de barras que escaneas con la app de Spotify. Renderizarlo en braille necesita **precision geometrica** — si los bordes no son nitidos, el escaneo falla.
+
+La solucion: **unsharp mask** en vez de dithering:
+
+```go
+func spotifyCodeToBraille(img image.Image, width int) string {
+    gray := resizeGray(img, pixW, pixH)
+    enhanceContrast(gray, pixW, pixH, 1.5)
+    sharpen(gray, pixW, pixH, 2.0) // Unsharp mask 2.0x
+
+    // Umbral duro en vez de Floyd-Steinberg
+    for y := 0; y < pixH; y++ {
+        for x := 0; x < pixW; x++ {
+            if gray[y][x] < 128 {
+                gray[y][x] = 0
+            } else {
+                gray[y][x] = 255
+            }
+        }
+    }
+    // ... mapeo a braille igual que las portadas
+}
+```
+
+---
+
+## Controles
+
+| Tecla | Accion |
+|-------|--------|
+| `←` `→` | Navegar entre secciones |
+| `↑` `↓` `j` `k` | Mover cursor en el blog |
+| `Enter` | Abrir post seleccionado |
+| `Esc` | Cerrar post / Salir |
+| `C` | Alternar modo color |
+| `L` | Alternar idioma (ES / EN) |
+| `R` | Reintentar carga de portada |
+| `q` | Salir |
+
+---
+
+## Deploy y seguridad
+
+<div class="flow-diagram flow-horizontal">
+  <div class="flow-node flow-input">
+    <strong>git push</strong>
+    <span>main</span>
+  </div>
+  <div class="flow-arrow-h">&rarr;</div>
+  <div class="flow-node flow-process">
+    <strong>GitHub Actions</strong>
+    <span>go build</span>
+  </div>
+  <div class="flow-arrow-h">&rarr;</div>
+  <div class="flow-node flow-process">
+    <strong>SCP</strong>
+    <span>Upload</span>
+  </div>
+  <div class="flow-arrow-h">&rarr;</div>
+  <div class="flow-node flow-output">
+    <strong>systemd</strong>
+    <span>Restart</span>
+  </div>
+</div>
+
+El servicio corre con hardening de systemd:
+
+```ini
+[Service]
+User=sshjoledev
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictSUIDSGID=true
+```
+
+El servidor no expone shell, no acepta archivos, no ejecuta codigo externo y no persiste datos de usuarios. **Si no hay superficie de ataque, no hay que defenderla**.
+
+---
+
+## Mi flujo de trabajo
+
+1. **Musica**: Agrego playlists a Spotify, ejecuto `python scripts/scrape_playlist.py "url1" "url2"` y el catalogo se actualiza con deduplicacion
+2. **Blog**: Creo un `.md` en `posts/es/` con titulo y fecha — el loader lo detecta al siguiente deploy
+3. **Deploy**: `git push` y en ~60 segundos el cambio esta en produccion
+
+> El proyecto completo son ~2,000 lineas de Go y un binario de ~15MB. Sin base de datos, sin cache, sin CDN — solo un binario y un archivo de texto con canciones.
