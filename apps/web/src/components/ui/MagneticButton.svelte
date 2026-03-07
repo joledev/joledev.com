@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { animate } from 'animejs';
 
   interface Props {
     strength?: number;
@@ -13,7 +12,6 @@
   let isMobile = $state(true);
 
   onMount(() => {
-    // Disable on touch devices
     isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   });
 
@@ -25,27 +23,16 @@
     const deltaX = (e.clientX - centerX) * strength;
     const deltaY = (e.clientY - centerY) * strength;
 
-    // Clamp to max offset
     const maxOffset = 15;
     const clampedX = Math.max(-maxOffset, Math.min(maxOffset, deltaX));
     const clampedY = Math.max(-maxOffset, Math.min(maxOffset, deltaY));
 
-    animate(wrapper, {
-      translateX: clampedX,
-      translateY: clampedY,
-      duration: 300,
-      ease: 'outQuad',
-    });
+    wrapper.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
   }
 
   function handleMouseLeave() {
     if (isMobile) return;
-    animate(wrapper, {
-      translateX: 0,
-      translateY: 0,
-      duration: 600,
-      ease: 'outElastic(1, .5)',
-    });
+    wrapper.style.transform = '';
   }
 </script>
 
@@ -62,6 +49,6 @@
 <style>
   .magnetic-wrapper {
     display: inline-block;
-    will-change: transform;
+    transition: transform 0.3s ease-out;
   }
 </style>

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { animate, stagger } from 'animejs';
 
   interface Project {
     id: string;
@@ -99,34 +98,33 @@
 
   function setFilter(cat: string) {
     activeCategory = cat;
-    // Animate cards in with anime.js
     setTimeout(() => {
       if (gridEl) {
-        const cards = gridEl.querySelectorAll('.project-card');
-        if (cards.length > 0) {
-          animate(cards, {
-            opacity: [0, 1],
-            translateY: [30, 0],
-            delay: stagger(60),
-            duration: 500,
-            easing: 'easeOutCubic',
+        const cards = gridEl.querySelectorAll<HTMLElement>('.project-card');
+        cards.forEach((card, i) => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          card.style.transition = `opacity 0.4s ease-out ${i * 50}ms, transform 0.4s ease-out ${i * 50}ms`;
+          requestAnimationFrame(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'none';
           });
-        }
+        });
       }
     }, 20);
   }
 
   onMount(() => {
-    // Initial stagger animation
     if (gridEl) {
-      const cards = gridEl.querySelectorAll('.project-card');
-      animate(cards, {
-        opacity: [0, 1],
-        translateY: [40, 0],
-        scale: [0.97, 1],
-        delay: stagger(80, { start: 100 }),
-        duration: 600,
-        easing: 'easeOutCubic',
+      const cards = gridEl.querySelectorAll<HTMLElement>('.project-card');
+      cards.forEach((card, i) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = `opacity 0.4s ease-out ${i * 60 + 100}ms, transform 0.4s ease-out ${i * 60 + 100}ms`;
+        requestAnimationFrame(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'none';
+        });
       });
     }
   });

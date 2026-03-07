@@ -21,7 +21,7 @@
     "viewAllPosts": "View all posts",
     "backToHome": "Back to home",
     "comingSoon": "Coming soon",
-    "contactEmail": "joel@joledev.com"
+    "contactEmail": "contacto@joledev.com"
   },
   "hero": {
     "titleLine1": "Technology development",
@@ -63,42 +63,44 @@
       {
         "company": "Coop. Leyes de Reforma",
         "logo": "/logos/leyes-de-reforma.png",
-        "role": "SaaS Architect",
+        "role": "SaaS Architect & Full Stack Developer",
         "type": "Hybrid",
         "period": "Nov 2023 — Present",
-        "description": "Complete digital ecosystem with multiple apps and bots, processing 10,000+ monthly transactions for the cooperative's integral operation.",
-        "products": ["WhatsApp Bot", "Members Mobile App", "Payroll", "Admin System", "Landing Page"],
-        "stack": ["Laravel", "Livewire", "TypeScript", "Node.js", "AWS", "Flutter"],
+        "description": "Complete digital ecosystem for a fishing cooperative: seafood e-commerce, full admin system, AI-powered WhatsApp bot and members mobile app. 10,000+ monthly transactions processed.",
+        "products": ["E-Commerce", "Admin System", "WhatsApp Bot + AI", "Members Mobile App", "Payroll", "Requests Dashboard"],
+        "stack": ["PHP", "Laravel", "Livewire", "Node.js", "Express", "Ollama", "SQLite", "MariaDB", "Stripe", "Docker", "K3s", "Flutter"],
         "highlights": [
-          "Institutional landing page",
-          "Complete cooperative management admin system",
-          "Payroll calculator based on product inputs and outputs",
-          "WhatsApp bot for employee requests (orders, status, history)",
-          "Members mobile app: inputs/outputs, supply costs, estimated and official payroll, news and achievements",
-          "Operational process automation",
+          "E-commerce with catalog, cart, Stripe payments (cards and OXXO), Skydropx and Uber Direct shipping",
+          "Admin system: multi-warehouse inventory, employees, fishermen, supplies and receipts with PDF generation",
+          "Payroll calculator based on product inputs/outputs and supply costs",
+          "WhatsApp bot with local AI (Ollama qwen2.5) that extracts product/quantity/specs from natural language",
+          "Requests web dashboard with filters, export, audit trail and real-time metrics",
+          "Members mobile app: inputs/outputs, estimated and official payroll, news and achievements",
+          "Automatic CFDI billing",
           "Error tracking system with email notifications",
-          "Automatic CFDI billing"
+          "K3s infrastructure with Traefik, Prometheus metrics and GitHub Actions CI/CD"
         ]
       },
       {
         "company": "Coop. Progreso",
         "logo": "/logos/progreso.png",
-        "role": "SaaS Architect",
+        "role": "Software Architect & Full Stack Developer",
         "type": "Hybrid",
         "period": "Dec 2022 — Present",
-        "description": "Full digital transformation of the cooperative's operation — the largest project in scope, with Play Store mobile app for 50+ users.",
-        "products": ["Membership App", "CMS Dashboard", "Nextcloud", "Warehouse", "Reports", "Landing Page"],
-        "stack": ["PHP", "Laravel", "TypeScript", "Docker", "Flutter", "React Native", "MySQL"],
+        "description": "Complete digital transformation of a fishing cooperative: 3 mobile apps, Go microservices, web platform with CMS, Mercado Libre e-commerce, and lobster reception system with AI. 15+ Docker containers in production.",
+        "products": ["Members App (Play Store)", "Cashiers App", "Lobster App (Tablet)", "API Microservices", "Website + CMS", "E-Commerce"],
+        "stack": ["Go", "Gin", "PHP", "Node.js", "Flutter", "React Native", "Astro", "Svelte", "MySQL", "PostgreSQL", "Redis", "Docker", "K3s"],
         "highlights": [
-          "Receipt generation and automation",
-          "Product processing and tracking",
-          "Landing page with CMS — all content manageable from a dashboard",
-          "Nextcloud work environments (video calls, cloud storage, chats)",
-          "Granular user and permissions system",
-          "Digital membership app on Play Store (App Store coming soon)",
-          "Warehouse control and delivery automation",
-          "Real-time reports",
-          "Automatic error tracking with email notifications"
+          "3 mobile apps: Members (React Native, Play Store), Cashiers (Flutter, QR point-of-sale) and Lobster (Flutter, field tablet for reception)",
+          "Go microservices with 44+ REST endpoints: memberships, transactions, lobster reception with quality classification",
+          "Multi-layer security: API Key + JWT with refresh token rotation + device fingerprinting + biometrics + rate limiting",
+          "Lobster app with debounce auto-save, PDF/Excel reports, QR codes for public real-time access",
+          "Members app with digital membership card, paginated transaction history, QR payments with 5-minute validity",
+          "Web platform with Astro + Svelte: public site, blog, CMS dashboard, abalone farming, logistics and export tracking",
+          "Mercado Libre integration for online store and product catalog",
+          "Self-hosted APK distribution with SHA-256 verification and forced updates without Play Store dependency",
+          "Monitoring with Sentry (session replay), Gatus (status page) and structured logging",
+          "Per-service automated CI/CD: GitHub Actions → GHCR → K3s with post-deploy health checks"
         ]
       },
       {

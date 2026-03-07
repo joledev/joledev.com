@@ -178,27 +178,31 @@ const t = useTranslations(lang);
   </div>
 </section>
 
-<script>
-  const btn = document.getElementById('toggle-experience');
-  const extra = document.getElementById('extra-experience');
+<script is:inline>
+  function initToggleExperience() {
+    const btn = document.getElementById('toggle-experience');
+    const extra = document.getElementById('extra-experience');
 
-  if (btn && extra) {
-    const showLabel = btn.dataset.showLabel!;
-    const hideLabel = btn.dataset.hideLabel!;
-    const chevron = btn.querySelector('.toggle-chevron');
+    if (btn && extra && !btn.dataset.initialized) {
+      btn.dataset.initialized = 'true';
+      const showLabel = btn.dataset.showLabel;
+      const hideLabel = btn.dataset.hideLabel;
+      const chevron = btn.querySelector('.toggle-chevron');
 
-    btn.addEventListener('click', () => {
-      const isCollapsed = extra.classList.contains('collapsed');
-      extra.classList.toggle('collapsed');
+      btn.addEventListener('click', () => {
+        const isCollapsed = extra.classList.contains('collapsed');
+        extra.classList.toggle('collapsed');
 
-      if (chevron) {
-        chevron.style.transform = isCollapsed ? 'rotate(180deg)' : '';
-      }
+        if (chevron) {
+          chevron.style.transform = isCollapsed ? 'rotate(180deg)' : '';
+        }
 
-      // Update button text (preserve the SVG)
-      btn.childNodes[0].textContent = isCollapsed ? hideLabel + ' ' : showLabel + ' ';
-    });
+        btn.childNodes[0].textContent = isCollapsed ? hideLabel + ' ' : showLabel + ' ';
+      });
+    }
   }
+  initToggleExperience();
+  document.addEventListener('astro:page-load', initToggleExperience);
 </script>
 
 <style>
@@ -277,7 +281,7 @@ const t = useTranslations(lang);
   }
 
   .company-logo--fallback {
-    background: #fff;
+    background: var(--color-bg-elevated);
   }
 
   .company-logo--fallback span {
@@ -407,7 +411,7 @@ const t = useTranslations(lang);
     padding: 0.0625rem 0.5rem;
     border-radius: 0.25rem;
     background: var(--color-bg-secondary);
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     border: 1px solid var(--color-border);
     font-family: var(--font-mono);
   }

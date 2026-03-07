@@ -203,13 +203,16 @@ const row2 = techs.slice(mid);
     display: flex;
     gap: 0.75rem;
     width: max-content;
-    cursor: grab;
     user-select: none;
-    touch-action: none;
+    animation: carouselScroll 40s linear infinite;
   }
 
-  .carousel-items:active {
-    cursor: grabbing;
+  .carousel-items[data-row="1"] {
+    animation-direction: reverse;
+  }
+
+  .carousel-items:hover {
+    animation-play-state: paused;
   }
 
   .tech-pill {
@@ -296,9 +299,14 @@ const row2 = techs.slice(mid);
     display: block;
   }
 
+  @keyframes carouselScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .carousel-items {
-      cursor: default;
+      animation: none;
     }
   }
 </style>
@@ -307,89 +315,19 @@ const row2 = techs.slice(mid);
   const carousel = document.querySelector('[data-carousel]') as HTMLElement | null;
   const pauseBtn = document.querySelector('[data-pause-btn]') as HTMLButtonElement | null;
 
-  if (carousel) {
+  if (carousel && pauseBtn) {
     const rows = Array.from(carousel.querySelectorAll('.carousel-items')) as HTMLElement[];
-    let paused = false;
-    const positions: number[] = [0, 0];
-    const speed = 0.5; // px per frame
+    let paused = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Respect reduced motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      paused = true;
-      pauseBtn?.classList.add('is-paused');
-    }
+    if (paused) pauseBtn.classList.add('is-paused');
 
-    // Pause / Play toggle
-    function togglePause() {
-      paused = !paused;
-      pauseBtn?.classList.toggle('is-paused', paused);
-    }
-
-    pauseBtn?.addEventListener('click', (e) => {
+    pauseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      togglePause();
-    });
-
-    // Drag handling
-    let dragging = false;
-    let dragIdx = -1;
-    let dragStartX = 0;
-    let dragStartPos = 0;
-
-    rows.forEach((row, i) => {
-      row.addEventListener('pointerdown', (e: PointerEvent) => {
-        dragging = true;
-        dragIdx = i;
-        dragStartX = e.clientX;
-        dragStartPos = positions[i];
-        row.setPointerCapture(e.pointerId);
-        e.preventDefault();
+      paused = !paused;
+      pauseBtn.classList.toggle('is-paused', paused);
+      rows.forEach((row) => {
+        row.style.animationPlayState = paused ? 'paused' : 'running';
       });
-
-      row.addEventListener('pointermove', (e: PointerEvent) => {
-        if (!dragging || dragIdx !== i) return;
-        const dx = e.clientX - dragStartX;
-        const half = row.scrollWidth / 2;
-        let p = dragStartPos + dx;
-        // Normalize to [-half, 0]
-        p = ((p % half) + half) % half;
-        if (p > 0) p -= half;
-        positions[i] = p;
-        row.style.transform = `translateX(${p}px)`;
-        e.preventDefault();
-      });
-
-      const endDrag = () => {
-        if (dragIdx === i) {
-          dragging = false;
-          dragIdx = -1;
-        }
-      };
-      row.addEventListener('pointerup', endDrag);
-      row.addEventListener('pointercancel', endDrag);
-    });
-
-    // Animation loop
-    function animate() {
-      if (!paused && !dragging) {
-        rows.forEach((row, i) => {
-          const dir = i === 0 ? -1 : 1;
-          positions[i] += speed * dir;
-          const half = row.scrollWidth / 2;
-          if (positions[i] <= -half) positions[i] += half;
-          if (positions[i] > 0) positions[i] -= half;
-          row.style.transform = `translateX(${positions[i]}px)`;
-        });
-      }
-      requestAnimationFrame(animate);
-    }
-
-    // Initialize: row 2 starts offset at -half
-    requestAnimationFrame(() => {
-      if (rows[1]) {
-        positions[1] = -(rows[1].scrollWidth / 2);
-      }
-      animate();
     });
   }
 </script>

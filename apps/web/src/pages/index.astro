@@ -1,5 +1,5 @@
 ---
-// Redirect to /es/ or /en/ based on Accept-Language header
+// Instant redirect — no visible content
 const acceptLang = Astro.request.headers.get('accept-language') ?? '';
 const prefersEnglish = acceptLang.split(',').some((part) => {
   const [lang] = part.trim().split(';');
@@ -13,8 +13,17 @@ const targetLang = prefersEnglish ? 'en' : 'es';
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="refresh" content={`0;url=/${targetLang}/`} />
-    <link rel="canonical" href={`/${targetLang}/`} />
-    <title>Redirecting...</title>
+    <link rel="canonical" href={`https://joledev.com/es/`} />
+    <title>JoleDev - Joel Lopez Verdugo</title>
+    <meta name="description" content="Desarrollo tecnologico a la medida de tu negocio. Soluciones digitales para empresas de cualquier tamano en Mexico y el mundo." />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #0f172a;
+        height: 100%;
+      }
+    </style>
   </head>
   <body>
     <script define:vars={{ targetLang }}>

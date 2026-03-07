@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { animate } from 'animejs';
 
   interface Props {
     value: number;
@@ -47,16 +46,23 @@
   });
 
   function runAnimation() {
-    const obj = { val: 0 };
-    animate(obj, {
-      val: [0, value],
-      duration,
-      delay,
-      ease: 'outExpo',
-      onUpdate: () => {
-        display = String(Math.round(obj.val));
-      },
-    });
+    const start = performance.now() + delay;
+    const end = start + duration;
+
+    function tick(now: number) {
+      if (now < start) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      const progress = Math.min((now - start) / duration, 1);
+      // easeOutExpo
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      display = String(Math.round(eased * value));
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      }
+    }
+    requestAnimationFrame(tick);
   }
 </script>
 

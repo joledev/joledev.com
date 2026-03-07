@@ -67,11 +67,20 @@ const alternateUrl = new URL(alternatePathname, Astro.site);
     <!-- Theme color -->
     <meta name="theme-color" content="#2563EB" />
 
-    <!-- Satoshi font from Fontshare -->
+    <!-- Satoshi font from Fontshare (preconnect + async load) -->
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
     <link
       href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <ViewTransitions />
 

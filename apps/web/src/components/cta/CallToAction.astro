@@ -98,4 +98,10 @@ const schedulePath = lang === 'es' ? '/es/agendar/' : '/en/schedule/';
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glow-border {
+      animation: none;
+    }
+  }
 </style>
